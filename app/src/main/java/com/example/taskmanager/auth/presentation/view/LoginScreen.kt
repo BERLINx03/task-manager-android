@@ -51,7 +51,7 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Surface(
-                modifier = Modifier.size(100.dp),
+                modifier = Modifier.size(120.dp),
                 shape = MaterialTheme.shapes.extraLarge,
                 color = MaterialTheme.colorScheme.primaryContainer
             ) {
@@ -101,7 +101,7 @@ fun LoginScreen(
             // Email Field
             OutlinedTextField(
                 value = state.value.loginRequest.username,
-                onValueChange = { state.value.loginRequest.username = it },
+                onValueChange = { viewModel.onEvent(LoginUiEvent.OnUsernameChange(it)) },
                 label = { Text("Email") },
                 leadingIcon = {
                     Icon(
@@ -123,7 +123,7 @@ fun LoginScreen(
             // Password Field
             OutlinedTextField(
                 value = state.value.loginRequest.password,
-                onValueChange = { state.value.loginRequest.password = it },
+                onValueChange = { viewModel.onEvent(LoginUiEvent.OnPasswordChange(it)) },
                 label = { Text("Password") },
                 leadingIcon = {
                     Icon(
@@ -202,23 +202,5 @@ fun LoginScreen(
                 }
             }
         }
-    }
-}
-
-// Preview
-@Composable
-@Preview(showBackground = true)
-fun LoginScreenPreview() {
-    MaterialTheme {
-        LoginScreen(
-            onLoginClick = {
-                LoginRequest(
-                    username = "test",
-                    password = "test"
-                )
-            },
-            onSignUpClick = { },
-            viewModel = hiltViewModel()
-        )
     }
 }

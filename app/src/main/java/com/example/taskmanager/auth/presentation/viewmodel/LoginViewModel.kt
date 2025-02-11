@@ -10,6 +10,7 @@ import com.example.taskmanager.auth.utils.AuthResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -20,7 +21,7 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val repository: AuthRepository
-) : ViewModel() {
+): ViewModel() {
 
     private val _loginState = MutableStateFlow(LoginUiState())
     val loginState = _loginState.asStateFlow()
@@ -41,7 +42,25 @@ class LoginViewModel @Inject constructor(
                     error = event.message
                 )
             }
+            is LoginUiEvent.OnUsernameChange -> {
+                _loginState.update { currentState ->
+                    currentState.copy(
+                        loginRequest = currentState.loginRequest.copy(
+                            username = event.username
+                        )
+                    )
+                }
 
+            }
+            is LoginUiEvent.OnPasswordChange -> {
+                _loginState.update { currentState ->
+                    currentState.copy(
+                        loginRequest = currentState.loginRequest.copy(
+                            password = event.password
+                        )
+                    )
+                }
+            }
             is LoginUiEvent.Login -> {
                 login(event.loginRequest)
             }

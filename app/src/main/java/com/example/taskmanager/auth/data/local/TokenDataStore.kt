@@ -28,9 +28,6 @@ class TokenDataStore(private val context: Context){
         }
     }
 
-    fun getToken(): Flow<String?> = context.dataStore.data.map { prefs ->
-        prefs[TOKEN_KEY]
-    }
 
     // Clear token on logout
     suspend fun clearToken() {

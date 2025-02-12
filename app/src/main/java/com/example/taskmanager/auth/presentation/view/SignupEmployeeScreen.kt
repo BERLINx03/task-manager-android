@@ -309,11 +309,11 @@ fun SignUpEmployeeScreen(
             OutlinedTextField(
                 value = state.employeeSignupRequest.username,
                 onValueChange = { viewModel.onEvent(SignUpEmployeeUiEvent.OnUsernameChange(it)) },
-                label = { Text("Username") },
+                label = { Text("Email") },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Email,
-                        contentDescription = "Username"
+                        contentDescription = "Email"
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),

@@ -2,6 +2,7 @@ package com.example.taskmanager.auth.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.taskmanager.auth.data.local.TokenDataStore
 import com.example.taskmanager.auth.data.remote.requestmodels.LoginRequest
 import com.example.taskmanager.auth.domain.repository.AuthRepository
 import com.example.taskmanager.auth.presentation.event.LoginUiEvent
@@ -10,6 +11,7 @@ import com.example.taskmanager.auth.utils.AuthResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -20,12 +22,19 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val repository: AuthRepository
+    private val repository: AuthRepository,
+    private val tokenDataStore: TokenDataStore
 ): ViewModel() {
 
     private val _loginState = MutableStateFlow(LoginUiState())
     val loginState = _loginState.asStateFlow()
 
+    init {
+        viewModelScope.launch {
+            val authState = tokenDataStore.authState.firstOrNull() ?: false
+            _loginState.value = _loginState.value.copy(isAuthenticated = authState)
+        }
+    }
 
     fun onEvent(event: LoginUiEvent) {
         when (event) {

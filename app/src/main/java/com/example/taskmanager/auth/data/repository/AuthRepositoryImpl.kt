@@ -37,6 +37,7 @@ class AuthRepositoryImpl @Inject constructor(
                         AuthResult.UnknownError("Empty token received")
                     } else {
                         try {
+                            tokenDataStore.saveAuthState(true)
                             tokenDataStore.saveToken(token)
                             AuthResult.Authenticated(response)
                         } catch (e: Exception) {
@@ -75,6 +76,7 @@ class AuthRepositoryImpl @Inject constructor(
             val response = api.signUpEmployee(employee)
             when (response.statusCode) {
                 HttpURLConnection.HTTP_OK, HttpURLConnection.HTTP_CREATED -> {
+                    Log.d(AUTH_REPOSITORY_TAG,"Employee signup successful")
                     AuthResult.Authenticated(response)
                 }
 

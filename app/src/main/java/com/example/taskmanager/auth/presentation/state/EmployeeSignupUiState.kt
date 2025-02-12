@@ -1,7 +1,7 @@
 package com.example.taskmanager.auth.presentation.state
 
 import com.example.taskmanager.auth.data.remote.requestmodels.EmployeeSignupRequest
-import com.example.taskmanager.auth.data.remote.requestmodels.ManagerSignupRequest
+import java.util.UUID
 
 data class EmployeeSignupUiState(
     val employeeSignupRequest: EmployeeSignupRequest = EmployeeSignupRequest(
@@ -10,10 +10,11 @@ data class EmployeeSignupUiState(
         phoneNumber = "",
         gender = 0,
         birthDate = "",
-        departmentId = "",
+        departmentId = UUID(0L, 0L) ,
         username = "",
         password = "",
     ),
+    val departmentIdText: String = "",
     val isLoading: Boolean = false,
     val error: String? = null,
     val isAuthenticated: Boolean = false

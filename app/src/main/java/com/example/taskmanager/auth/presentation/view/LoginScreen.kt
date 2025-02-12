@@ -23,14 +23,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.example.taskmanager.auth.data.remote.requestmodels.LoginRequest
 import com.example.taskmanager.auth.presentation.event.LoginUiEvent
 import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
+import com.example.taskmanager.auth.utils.Screens
 
 @Composable
 fun LoginScreen(
     onLoginClick: (LoginUiEvent) -> Unit,
-    onSignUpClick: () -> Unit,
+    navController: NavController,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
 
@@ -197,7 +199,7 @@ fun LoginScreen(
                     text = "Don't have an account? ",
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
-                TextButton(onClick = onSignUpClick) {
+                TextButton(onClick = { navController.navigate(Screens.AuthScreens.ChooseRole.route) }) {
                     Text("Sign Up")
                 }
             }

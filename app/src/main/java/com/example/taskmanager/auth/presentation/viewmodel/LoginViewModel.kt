@@ -154,17 +154,21 @@ class LoginViewModel @Inject constructor(
 
     private fun forgetPassword(email: ForgotPasswordRequestDto) {
         viewModelScope.launch {
-            _loginState.value = _loginState.value.copy(
-                isLoading = true,
-                error = null
-            )
+            _loginState.update {
+                it.copy(
+                    isLoading = true,
+                    error = null
+                )
+            }
             when (val result = repository.forgetPassword(email)) {
                 is AuthResult.Authenticated -> {
-                    _loginState.value = _loginState.value.copy(
-                        isLoading = false,
-                        isAuthenticated = true,
-                        error = result.data?.message,
-                    )
+                    _loginState.update {
+                        it.copy(
+                            isLoading = false,
+                            isAuthenticated = true,
+                            error = null
+                        )
+                    }
                 }
 
                 is AuthResult.SignedOut -> {
@@ -211,27 +215,33 @@ class LoginViewModel @Inject constructor(
 
             when (val result = repository.loginUser(loginRequest)) {
                 is AuthResult.Authenticated -> {
-                    _loginState.value = _loginState.value.copy(
-                        isLoading = false,
-                        isAuthenticated = true,
-                        error = null
-                    )
+                    _loginState.update {
+                        it.copy(
+                            isLoading = false,
+                            isAuthenticated = true,
+                            error = null
+                        )
+                    }
                 }
 
                 is AuthResult.UnAuthenticated -> {
-                    _loginState.value = _loginState.value.copy(
-                        isLoading = false,
-                        isAuthenticated = false,
-                        error = result.message ?: "Authentication failed"
-                    )
+                    _loginState.update {
+                        it.copy(
+                            isLoading = false,
+                            isAuthenticated = false,
+                            error = result.message ?: "Authentication failed"
+                        )
+                    }
                 }
 
                 is AuthResult.UnknownError -> {
-                    _loginState.value = _loginState.value.copy(
-                        isLoading = false,
-                        isAuthenticated = false,
-                        error = result.message ?: "An unknown error occurred"
-                    )
+                    _loginState.update {
+                        it.copy(
+                            isLoading = false,
+                            isAuthenticated = false,
+                            error = result.message ?: "An unknown error occurred"
+                        )
+                    }
                 }
 
                 is AuthResult.SignedOut -> {

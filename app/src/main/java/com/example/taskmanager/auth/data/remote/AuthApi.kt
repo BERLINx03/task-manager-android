@@ -3,7 +3,7 @@ package com.example.taskmanager.auth.data.remote
 import com.example.taskmanager.auth.data.remote.reponsemodels.ResponseDto
 import com.example.taskmanager.auth.data.remote.requestmodels.AdminSignupRequest
 import com.example.taskmanager.auth.data.remote.requestmodels.EmployeeSignupRequest
-import com.example.taskmanager.auth.data.remote.requestmodels.ForgetPasswordRequestDto
+import com.example.taskmanager.auth.data.remote.requestmodels.ForgotPasswordRequestDto
 import com.example.taskmanager.auth.data.remote.requestmodels.LoginRequest
 import com.example.taskmanager.auth.data.remote.requestmodels.ManagerSignupRequest
 import com.example.taskmanager.auth.data.remote.requestmodels.ResetPasswordRequestDto
@@ -41,9 +41,9 @@ interface AuthApi {
         @Body verificationRequestDto: VerificationRequestDto
     ): ResponseDto<String>
 
-    @POST("/Auth/Password/Forget")
+    @POST("/Auth/Password/Forgot")
     suspend fun forgetPassword(
-        @Body forgetPasswordRequestDto: ForgetPasswordRequestDto
+        @Body forgetPassword: ForgotPasswordRequestDto
     ): ResponseDto<String>
 
     @POST("/Auth/Password/Reset")

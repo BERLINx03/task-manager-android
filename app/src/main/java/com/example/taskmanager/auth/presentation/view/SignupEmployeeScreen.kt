@@ -305,7 +305,10 @@ fun SignUpEmployeeScreen(
             // Username/Email Field
             OutlinedTextField(
                 value = state.employeeSignupRequest.username,
-                onValueChange = { viewModel.onEvent(SignUpEmployeeUiEvent.OnUsernameChange(it)) },
+                onValueChange = {
+                    val cleanedValue = it.replace("\n", "").trim()
+                    viewModel.onEvent(SignUpEmployeeUiEvent.OnUsernameChange(cleanedValue))
+                },
                 label = { Text("Email") },
                 leadingIcon = {
                     Icon(
@@ -443,5 +446,5 @@ private fun isFormValid(state: EmployeeSignupUiState): Boolean {
 
 
 fun String.toVerificationRequestDto(): VerificationRequestDto {
-    return VerificationRequestDto(email = this)
+    return VerificationRequestDto(email = this.trim())
 }

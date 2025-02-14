@@ -3,7 +3,9 @@ package com.example.taskmanager.auth.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.taskmanager.auth.data.local.TokenDataStore
+import com.example.taskmanager.auth.data.remote.requestmodels.ForgotPasswordRequestDto
 import com.example.taskmanager.auth.data.remote.requestmodels.LoginRequest
+import com.example.taskmanager.auth.data.remote.requestmodels.ResetPasswordRequestDto
 import com.example.taskmanager.auth.domain.repository.AuthRepository
 import com.example.taskmanager.auth.presentation.event.LoginUiEvent
 import com.example.taskmanager.auth.presentation.state.LoginUiState
@@ -24,7 +26,7 @@ import javax.inject.Inject
 class LoginViewModel @Inject constructor(
     private val repository: AuthRepository,
     private val tokenDataStore: TokenDataStore
-): ViewModel() {
+) : ViewModel() {
 
     private val _loginState = MutableStateFlow(LoginUiState())
     val loginState = _loginState.asStateFlow()
@@ -51,6 +53,7 @@ class LoginViewModel @Inject constructor(
                     error = event.message
                 )
             }
+
             is LoginUiEvent.OnUsernameChange -> {
                 _loginState.update { currentState ->
                     currentState.copy(
@@ -61,6 +64,7 @@ class LoginViewModel @Inject constructor(
                 }
 
             }
+
             is LoginUiEvent.OnPasswordChange -> {
                 _loginState.update { currentState ->
                     currentState.copy(
@@ -70,22 +74,142 @@ class LoginViewModel @Inject constructor(
                     )
                 }
             }
+
             is LoginUiEvent.Login -> {
                 login(event.loginRequest)
             }
 
+            is LoginUiEvent.ForgotPassword -> {
+                forgetPassword(event.forgotPasswordRequest)
+            }
+
+            is LoginUiEvent.ResetPassword -> {
+                resetPassword(event.resetPasswordRequest)
+            }
+            is LoginUiEvent.OnOtpChange -> {
+                _loginState.update { currentState ->
+                    currentState.copy(
+                        otp = event.otp
+                    )
+                }
+            }
+            is LoginUiEvent.OnNewPasswordChange -> {
+                _loginState.update { currentState ->
+                    currentState.copy(
+                        newPassword = event.newPassword
+                    )
+                }
+            }
         }
     }
 
-    private fun login(loginRequest: LoginRequest) {
+
+    private fun resetPassword(resetPasswordRequest: ResetPasswordRequestDto) {
         viewModelScope.launch {
-            val result = repository.loginUser(loginRequest)
             _loginState.value = _loginState.value.copy(
-                isLoading = false,
+                isLoading = true,
                 error = null
             )
 
-            when (result) {
+            when (val result = repository.resetPassword(resetPasswordRequest)) {
+                is AuthResult.Authenticated -> {
+                    _loginState.update {
+                        it.copy(
+                            isLoading = false,
+                            isAuthenticated = true,
+                            error = null
+                        )
+                    }
+                }
+                is AuthResult.SignedOut -> {
+                    _loginState.update {
+                        it.copy(
+                            isLoading = false,
+                            isAuthenticated = false,
+                            error = null
+                        )
+                    }
+                }
+                is AuthResult.UnAuthenticated -> {
+                    _loginState.update {
+                        it.copy(
+                            isLoading = false,
+                            isAuthenticated = false,
+                            error = result.message ?: "Authentication failed"
+                        )
+                    }
+                }
+                is AuthResult.UnknownError -> {
+                    _loginState.update {
+                        it.copy(
+                            isLoading = false,
+                            isAuthenticated = false,
+                            error = result.message ?: "An unknown error occurred"
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun forgetPassword(email: ForgotPasswordRequestDto) {
+        viewModelScope.launch {
+            _loginState.value = _loginState.value.copy(
+                isLoading = true,
+                error = null
+            )
+            when (val result = repository.forgetPassword(email)) {
+                is AuthResult.Authenticated -> {
+                    _loginState.value = _loginState.value.copy(
+                        isLoading = false,
+                        isAuthenticated = true,
+                        error = result.data?.message,
+                    )
+                }
+
+                is AuthResult.SignedOut -> {
+                    _loginState.update {
+                        it.copy(
+                            isLoading = false,
+                            isAuthenticated = false,
+                            error = null
+                        )
+                    }
+                }
+
+                is AuthResult.UnAuthenticated -> {
+                    _loginState.update {
+                        it.copy(
+                            isLoading = false,
+                            isAuthenticated = false,
+                            error = result.message ?: "Authentication failed"
+                        )
+                    }
+                }
+
+                is AuthResult.UnknownError -> {
+                    _loginState.update {
+                        it.copy(
+                            isLoading = false,
+                            isAuthenticated = false,
+                            error = result.message ?: "An unknown error occurred"
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+
+    private fun login(loginRequest: LoginRequest) {
+        viewModelScope.launch {
+
+            _loginState.value = _loginState.value.copy(
+                isLoading = true,
+                error = null
+            )
+
+            when (val result = repository.loginUser(loginRequest)) {
                 is AuthResult.Authenticated -> {
                     _loginState.value = _loginState.value.copy(
                         isLoading = false,

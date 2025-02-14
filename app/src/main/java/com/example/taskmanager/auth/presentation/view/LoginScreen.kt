@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.taskmanager.auth.data.remote.requestmodels.ForgotPasswordRequestDto
 import com.example.taskmanager.auth.data.remote.requestmodels.LoginRequest
 import com.example.taskmanager.auth.presentation.event.LoginUiEvent
 import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
@@ -103,7 +104,10 @@ fun LoginScreen(
             // Email Field
             OutlinedTextField(
                 value = state.value.loginRequest.username,
-                onValueChange = { viewModel.onEvent(LoginUiEvent.OnUsernameChange(it)) },
+                onValueChange = {
+                    val cleanedValue = it.replace("\n", "").trim()
+                    viewModel.onEvent(LoginUiEvent.OnUsernameChange(cleanedValue))
+                },
                 label = { Text("Email") },
                 leadingIcon = {
                     Icon(
@@ -119,7 +123,6 @@ fun LoginScreen(
                 singleLine = true,
                 shape = MaterialTheme.shapes.medium
             )
-
             Spacer(modifier = Modifier.height(16.dp))
 
             // Password Field
@@ -160,7 +163,10 @@ fun LoginScreen(
 
             // Forgot Password
             TextButton(
-                onClick = { /* Handle forgot password */ },
+                onClick = {
+                    viewModel.onEvent(LoginUiEvent.ForgotPassword(state.value.loginRequest.username.toForgotPasswordRequest()))
+                    navController.navigate(Screens.AuthScreens.ResetPassword.route)
+                          },
                 modifier = Modifier.align(Alignment.End)
             ) {
                 Text("Forgot Password?")
@@ -205,4 +211,10 @@ fun LoginScreen(
             }
         }
     }
+}
+
+fun String.toForgotPasswordRequest(): ForgotPasswordRequestDto{
+    return ForgotPasswordRequestDto(
+        email = this.trim()
+    )
 }

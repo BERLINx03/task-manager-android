@@ -1,5 +1,5 @@
 package com.example.taskmanager.auth.data.remote.requestmodels
 
-data class ForgetPasswordRequestDto(
+data class ForgotPasswordRequestDto(
     val email: String
 )

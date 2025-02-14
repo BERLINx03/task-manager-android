@@ -6,7 +6,7 @@ import com.example.taskmanager.auth.data.remote.AuthApi
 import com.example.taskmanager.auth.data.remote.reponsemodels.ResponseDto
 import com.example.taskmanager.auth.data.remote.requestmodels.AdminSignupRequest
 import com.example.taskmanager.auth.data.remote.requestmodels.EmployeeSignupRequest
-import com.example.taskmanager.auth.data.remote.requestmodels.ForgetPasswordRequestDto
+import com.example.taskmanager.auth.data.remote.requestmodels.ForgotPasswordRequestDto
 import com.example.taskmanager.auth.data.remote.requestmodels.LoginRequest
 import com.example.taskmanager.auth.data.remote.requestmodels.ManagerSignupRequest
 import com.example.taskmanager.auth.data.remote.requestmodels.ResetPasswordRequestDto
@@ -211,7 +211,7 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun forgetPassword(forgetPassword: ForgetPasswordRequestDto): AuthResult<ResponseDto<String>> {
+    override suspend fun forgetPassword(forgetPassword: ForgotPasswordRequestDto): AuthResult<ResponseDto<String>> {
         return try {
             val response = api.forgetPassword(forgetPassword)
             when (response.statusCode) {

@@ -16,10 +16,14 @@ import androidx.navigation.compose.rememberNavController
 import com.example.taskmanager.auth.presentation.view.LoginScreen
 import com.example.taskmanager.auth.presentation.view.verification.OtpEmployeeVerificationScreen
 import com.example.taskmanager.auth.presentation.view.RoleSelectionScreen
+import com.example.taskmanager.auth.presentation.view.SignUpAdminScreen
 import com.example.taskmanager.auth.presentation.view.SignUpEmployeeScreen
 import com.example.taskmanager.auth.presentation.view.SignUpManagerScreen
+import com.example.taskmanager.auth.presentation.view.verification.OtpAdminVerificationScreen
 import com.example.taskmanager.auth.presentation.view.verification.OtpManagerVerificationScreen
+import com.example.taskmanager.auth.presentation.view.verification.ResetPasswordScreen
 import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
+import com.example.taskmanager.auth.presentation.viewmodel.SignUpAdminViewModel
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpEmployeeViewModel
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpManagerViewModel
 import com.example.taskmanager.auth.utils.Screens
@@ -31,6 +35,7 @@ class TaskManagerActivity : ComponentActivity() {
     private val loginViewModel: LoginViewModel by viewModels()
     private val signUpEmployeeViewModel: SignUpEmployeeViewModel by viewModels()
     private val signUpManagerViewModel: SignUpManagerViewModel by viewModels()
+    private val signUpAdminViewModel: SignUpAdminViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -54,6 +59,17 @@ class TaskManagerActivity : ComponentActivity() {
                                     viewModel = loginViewModel
                                 )
                             }
+
+                            composable(Screens.AuthScreens.ResetPassword.route){
+                                ResetPasswordScreen(
+                                    onResetClick = {
+                                        loginViewModel.onEvent(it)
+                                    },
+                                    navController = navController,
+                                    viewModel = loginViewModel
+                                )
+                            }
+
 
                             composable(Screens.AuthScreens.ChooseRole.route){
                                 RoleSelectionScreen(navController = navController)
@@ -96,6 +112,26 @@ class TaskManagerActivity : ComponentActivity() {
                                     },
                                     navController = navController,
                                     viewModel = signUpManagerViewModel
+                                )
+                            }
+
+                            composable(Screens.AuthScreens.SignUp.Admin.route) {
+                                SignUpAdminScreen(
+                                    onSignUpClick = {
+                                        signUpAdminViewModel.onEvent(it)
+                                    },
+                                    navController = navController,
+                                    viewModel = signUpAdminViewModel
+                                )
+                            }
+
+                            composable(Screens.AuthScreens.VerifyOtp.Admin.route){
+                                OtpAdminVerificationScreen(
+                                    onVerifyClick = {
+                                        signUpAdminViewModel.onEvent(it)
+                                    },
+                                    navController = navController,
+                                    viewModel = signUpAdminViewModel
                                 )
                             }
                         }

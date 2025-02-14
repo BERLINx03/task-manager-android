@@ -1,4 +1,4 @@
-package com.example.taskmanager.auth.presentation.view
+package com.example.taskmanager.auth.presentation.view.verification
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
@@ -42,17 +42,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.taskmanager.auth.presentation.event.SignUpEmployeeUiEvent
+import com.example.taskmanager.auth.presentation.event.SignUpManagerUiEvent
+import com.example.taskmanager.auth.presentation.view.toVerificationRequestDto
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpEmployeeViewModel
+import com.example.taskmanager.auth.presentation.viewmodel.SignUpManagerViewModel
 import kotlinx.coroutines.delay
 
 /**
  * @author Abdallah Elsokkary
  */
 @Composable
-fun OtpVerificationScreen(
-    onVerifyClick: (SignUpEmployeeUiEvent) -> Unit,
+fun OtpManagerVerificationScreen(
+    onVerifyClick: (SignUpManagerUiEvent) -> Unit,
     navController: NavController,
-    viewModel: SignUpEmployeeViewModel
+    viewModel: SignUpManagerViewModel
 ) {
     val state by viewModel.signUpState.collectAsState()
     var timeLeft by remember { mutableIntStateOf(60) }
@@ -109,7 +112,7 @@ fun OtpVerificationScreen(
             )
 
             Text(
-                text = state.employeeSignupRequest.username,
+                text = state.managerSignupRequest.username,
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Bold
                 ),
@@ -133,10 +136,10 @@ fun OtpVerificationScreen(
             }
 
             OutlinedTextField(
-                value = state.employeeSignupRequest.otpEmailVerifyCode,
+                value = state.managerSignupRequest.otpEmailVerifyCode,
                 onValueChange = {
                     if (it.length <= 6 && it.all { char -> char.isDigit() }) {
-                        viewModel.onEvent(SignUpEmployeeUiEvent.OnOtpChange(it))
+                        viewModel.onEvent(SignUpManagerUiEvent.OnOtpChange(it))
                     }
                 },
                 label = { Text("Verification Code") },
@@ -174,15 +177,15 @@ fun OtpVerificationScreen(
             Button(
                 onClick = {
                     onVerifyClick(
-                        SignUpEmployeeUiEvent.SignUpEmployee(
-                            state.employeeSignupRequest
+                        SignUpManagerUiEvent.SignUpManager(
+                            state.managerSignupRequest
                         )
                     )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                enabled = !state.isLoading && state.employeeSignupRequest.otpEmailVerifyCode.length == 6,
+                enabled = !state.isLoading && state.managerSignupRequest.otpEmailVerifyCode.length == 6,
                 shape = MaterialTheme.shapes.medium
             ) {
                 if (state.isLoading) {
@@ -215,7 +218,7 @@ fun OtpVerificationScreen(
                             // Reset timer and resend code
                             timeLeft = 60
                             canResend = false
-                            viewModel.onEvent(SignUpEmployeeUiEvent.OnVerifyEmail(state.employeeSignupRequest.username.toVerificationRequestDto()))
+                            viewModel.onEvent(SignUpManagerUiEvent.OnVerifyEmail(state.managerSignupRequest.username.toVerificationRequestDto()))
                         }
                     ) {
                         Text("Resend Code")
@@ -225,7 +228,6 @@ fun OtpVerificationScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Change Email Option
             TextButton(
                 onClick = { navController.popBackStack() }
             ) {
@@ -234,14 +236,3 @@ fun OtpVerificationScreen(
         }
     }
 }
-//
-//@Composable
-//@Preview(showBackground = true)
-//fun OtpVerificationScreenPreview() {
-//    MaterialTheme {
-//        OtpVerificationScreen(
-//            onVerifyClick = {},
-//            navController = NavController(LocalContext.current),
-//        )
-//    }
-//}

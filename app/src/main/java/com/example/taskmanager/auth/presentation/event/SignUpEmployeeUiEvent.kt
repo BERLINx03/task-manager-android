@@ -21,5 +21,4 @@ sealed class SignUpEmployeeUiEvent{
     data class OnUsernameChange(val username: String) : SignUpEmployeeUiEvent()
     data class OnPasswordChange(val password: String) : SignUpEmployeeUiEvent()
     data class Error(val message: String) : SignUpEmployeeUiEvent()
-
 }

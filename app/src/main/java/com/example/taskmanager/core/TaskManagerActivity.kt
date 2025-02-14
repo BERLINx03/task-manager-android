@@ -14,11 +14,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.taskmanager.auth.presentation.view.LoginScreen
-import com.example.taskmanager.auth.presentation.view.OtpVerificationScreen
+import com.example.taskmanager.auth.presentation.view.verification.OtpEmployeeVerificationScreen
 import com.example.taskmanager.auth.presentation.view.RoleSelectionScreen
 import com.example.taskmanager.auth.presentation.view.SignUpEmployeeScreen
+import com.example.taskmanager.auth.presentation.view.SignUpManagerScreen
+import com.example.taskmanager.auth.presentation.view.verification.OtpManagerVerificationScreen
 import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpEmployeeViewModel
+import com.example.taskmanager.auth.presentation.viewmodel.SignUpManagerViewModel
 import com.example.taskmanager.auth.utils.Screens
 import com.example.taskmanager.core.ui.theme.TaskManagerTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -27,6 +30,7 @@ import dagger.hilt.android.AndroidEntryPoint
 class TaskManagerActivity : ComponentActivity() {
     private val loginViewModel: LoginViewModel by viewModels()
     private val signUpEmployeeViewModel: SignUpEmployeeViewModel by viewModels()
+    private val signUpManagerViewModel: SignUpManagerViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -65,13 +69,33 @@ class TaskManagerActivity : ComponentActivity() {
                                 )
                             }
 
-                            composable(Screens.AuthScreens.VerifyOtp.route){
-                                OtpVerificationScreen(
+                            composable(Screens.AuthScreens.VerifyOtp.Employee.route){
+                                OtpEmployeeVerificationScreen(
                                     onVerifyClick = {
                                         signUpEmployeeViewModel.onEvent(it)
                                     },
                                     navController = navController,
                                     viewModel = signUpEmployeeViewModel
+                                )
+                            }
+
+                            composable(Screens.AuthScreens.SignUp.Manager.route) {
+                                SignUpManagerScreen(
+                                    onSignUpClick = {
+                                        signUpManagerViewModel.onEvent(it)
+                                    },
+                                    navController = navController,
+                                    viewModel = signUpManagerViewModel
+                                )
+                            }
+
+                            composable(Screens.AuthScreens.VerifyOtp.Manager.route){
+                                OtpManagerVerificationScreen(
+                                    onVerifyClick = {
+                                        signUpManagerViewModel.onEvent(it)
+                                    },
+                                    navController = navController,
+                                    viewModel = signUpManagerViewModel
                                 )
                             }
                         }

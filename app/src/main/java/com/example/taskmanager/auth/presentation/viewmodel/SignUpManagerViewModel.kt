@@ -4,10 +4,11 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.taskmanager.auth.data.remote.requestmodels.EmployeeSignupRequest
+import com.example.taskmanager.auth.data.remote.requestmodels.ManagerSignupRequest
 import com.example.taskmanager.auth.data.remote.requestmodels.VerificationRequestDto
 import com.example.taskmanager.auth.domain.repository.AuthRepository
-import com.example.taskmanager.auth.presentation.event.SignUpEmployeeUiEvent
-import com.example.taskmanager.auth.presentation.state.EmployeeSignupUiState
+import com.example.taskmanager.auth.presentation.event.SignUpManagerUiEvent
+import com.example.taskmanager.auth.presentation.state.ManagerSignupUiState
 import com.example.taskmanager.auth.utils.AuthResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -22,18 +23,17 @@ import javax.inject.Inject
  * @author Abdallah Elsokkary
  */
 @HiltViewModel
-class SignUpEmployeeViewModel @Inject constructor(
-    private val repository: AuthRepository
-) : ViewModel() {
-    private val _signUpState = MutableStateFlow(EmployeeSignupUiState())
+class SignUpManagerViewModel @Inject
+constructor(private val repository: AuthRepository) : ViewModel() {
+
+    private val _signUpState = MutableStateFlow(ManagerSignupUiState())
     val signUpState = _signUpState.asStateFlow()
 
     private var validationJob: Job? = null
 
-
-    fun onEvent(event: SignUpEmployeeUiEvent) {
-        when (event) {
-            is SignUpEmployeeUiEvent.Error -> {
+    fun onEvent(event: SignUpManagerUiEvent){
+        when(event){
+            is SignUpManagerUiEvent.Error -> {
                 _signUpState.update {
                     it.copy(
                         isLoading = false,
@@ -41,8 +41,7 @@ class SignUpEmployeeViewModel @Inject constructor(
                     )
                 }
             }
-
-            is SignUpEmployeeUiEvent.Loading -> {
+            is SignUpManagerUiEvent.Loading -> {
                 _signUpState.update {
                     it.copy(
                         isLoading = true,
@@ -50,34 +49,31 @@ class SignUpEmployeeViewModel @Inject constructor(
                     )
                 }
             }
-
-            is SignUpEmployeeUiEvent.OnBirthDateChange -> {
+            is SignUpManagerUiEvent.OnBirthDateChange -> {
                 _signUpState.update {
                     it.copy(
-                        employeeSignupRequest = it.employeeSignupRequest.copy(
+                        managerSignupRequest = it.managerSignupRequest.copy(
                             birthDate = event.birthDate
                         )
                     )
                 }
             }
-
-            is SignUpEmployeeUiEvent.OnDepartmentIdChange -> {
+            is SignUpManagerUiEvent.OnDepartmentIdChange -> {
                 _signUpState.update {
                     it.copy(
                         departmentIdText = event.value,
-                        employeeSignupRequest = it.employeeSignupRequest.copy(
+                        managerSignupRequest = it.managerSignupRequest.copy(
                             departmentId = event.departmentId
                         )
                     )
                 }
             }
-
-            is SignUpEmployeeUiEvent.OnFirstNameChange -> {
+            is SignUpManagerUiEvent.OnFirstNameChange -> {
 
                 validateName(event.firstName) { isValid, error ->  // CHANGED: Added name validation
                     _signUpState.update {
                         it.copy(
-                            employeeSignupRequest = it.employeeSignupRequest.copy(
+                            managerSignupRequest = it.managerSignupRequest.copy(
                                 firstName = event.firstName
                             ),
                             error = if (!isValid) error else null
@@ -85,22 +81,21 @@ class SignUpEmployeeViewModel @Inject constructor(
                     }
                 }
             }
-
-            is SignUpEmployeeUiEvent.OnGenderChange -> {
+            is SignUpManagerUiEvent.OnGenderChange -> {
                 _signUpState.update {
                     it.copy(
-                        employeeSignupRequest = it.employeeSignupRequest.copy(
+                        managerSignupRequest = it.managerSignupRequest.copy(
                             gender = event.gender
                         )
                     )
                 }
             }
 
-            is SignUpEmployeeUiEvent.OnLastNameChange -> {
+            is SignUpManagerUiEvent.OnLastNameChange -> {
                 validateName(event.lastName) { isValid, error ->  // CHANGED: Added name validation
                     _signUpState.update {
                         it.copy(
-                            employeeSignupRequest = it.employeeSignupRequest.copy(
+                            managerSignupRequest = it.managerSignupRequest.copy(
                                 lastName = event.lastName
                             ),
                             error = if (!isValid) error else null
@@ -108,15 +103,39 @@ class SignUpEmployeeViewModel @Inject constructor(
                     }
                 }
             }
-
-            is SignUpEmployeeUiEvent.OnPhoneNumberChange -> {
+            is SignUpManagerUiEvent.OnOtpChange -> {
+                _signUpState.update {
+                    it.copy(
+                        managerSignupRequest = it.managerSignupRequest.copy(
+                            otpEmailVerifyCode = event.otp
+                        )
+                    )
+                }
+            }
+            is SignUpManagerUiEvent.OnPasswordChange -> {
+                validationJob?.cancel()
+                validationJob = viewModelScope.launch {
+                    delay(500)
+                    validatePassword(event.password) { isValid, error ->
+                        _signUpState.update {
+                            it.copy(
+                                managerSignupRequest = it.managerSignupRequest.copy(
+                                    password = event.password
+                                ),
+                                error = if (!isValid && event.password.isNotBlank()) error else null
+                            )
+                        }
+                    }
+                }
+            }
+            is SignUpManagerUiEvent.OnPhoneNumberChange -> {
                 validationJob?.cancel()
                 validationJob = viewModelScope.launch {
                     delay(500)
                     validatePhoneNumber(event.phoneNumber) { isValid, error ->  // CHANGED: Added phone validation
                         _signUpState.update {
                             it.copy(
-                                employeeSignupRequest = it.employeeSignupRequest.copy(
+                                managerSignupRequest = it.managerSignupRequest.copy(
                                     phoneNumber = event.phoneNumber
                                 ),
                                 error = if (!isValid) error else null
@@ -125,16 +144,14 @@ class SignUpEmployeeViewModel @Inject constructor(
                     }
                 }
             }
-
-            is SignUpEmployeeUiEvent.OnUsernameChange -> {
-                // added debounce for email validation
+            is SignUpManagerUiEvent.OnUsernameChange -> {
                 validationJob?.cancel()
                 validationJob = viewModelScope.launch {
                     delay(500)
                     val isValid = isValidEmail(event.username)
                     _signUpState.update {
                         it.copy(
-                            employeeSignupRequest = it.employeeSignupRequest.copy(
+                            managerSignupRequest = it.managerSignupRequest.copy(
                                 username = event.username
                             ),
                             error = if (!isValid && event.username.isNotBlank())
@@ -144,46 +161,14 @@ class SignUpEmployeeViewModel @Inject constructor(
                     }
                 }
             }
-
-            is SignUpEmployeeUiEvent.OnPasswordChange -> {
-                // if user types fast, we want to cancel the previous job and start a new one
-                // so that we don't annoy the user with multiple errors
-                validationJob?.cancel()
-                validationJob = viewModelScope.launch {
-                    delay(500)
-                    validatePassword(event.password) { isValid, error ->
-                        _signUpState.update {
-                            it.copy(
-                                employeeSignupRequest = it.employeeSignupRequest.copy(
-                                    password = event.password
-                                ),
-                                error = if (!isValid && event.password.isNotBlank()) error else null
-                            )
-                        }
-                    }
-                }
-            }
-
-            is SignUpEmployeeUiEvent.SignUpEmployee -> {
-                signUpEmployee(event.employeeSignupRequest)
-            }
-
-            is SignUpEmployeeUiEvent.OnVerifyEmail -> {
+            is SignUpManagerUiEvent.OnVerifyEmail -> {
                 verifyEmail(event.verificationRequestDto)
             }
-
-            is SignUpEmployeeUiEvent.OnOtpChange -> {
-                _signUpState.update {
-                    it.copy(
-                        employeeSignupRequest = it.employeeSignupRequest.copy(
-                            otpEmailVerifyCode = event.otp
-                        )
-                    )
-                }
+            is SignUpManagerUiEvent.SignUpManager -> {
+                signUpManager(event.managerSignupRequest)
             }
         }
     }
-
 
     private fun isValidEmail(email: String): Boolean {
         val emailPattern = """^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"""
@@ -242,7 +227,7 @@ class SignUpEmployeeViewModel @Inject constructor(
 
                 when (val result = repository.verifyEmail(verificationRequestDto)) {
                     is AuthResult.Authenticated -> {
-                        Log.d("SignUpEmployeeViewModel", "Authentication successful")
+                        Log.d("SignUpManagerViewModel", "Authentication successful")
                         _signUpState.update {
                             it.copy(
                                 isLoading = false,
@@ -292,15 +277,14 @@ class SignUpEmployeeViewModel @Inject constructor(
         }
     }
 
-
-    private fun signUpEmployee(employeeSignupRequest: EmployeeSignupRequest) {
+    private fun signUpManager(managerSignupRequest: ManagerSignupRequest) {
         viewModelScope.launch {
             try {
                 _signUpState.update { it.copy(isLoading = true, error = null) }
 
-                when (val result = repository.signupEmployee(employeeSignupRequest)) {
+                when (val result = repository.signupManager(managerSignupRequest)) {
                     is AuthResult.Authenticated -> {
-                        Log.d("SignUpEmployeeViewModel", "Authentication successful")
+                        Log.d("SignUpManagerViewModel", "Authentication successful")
                         _signUpState.update {
                             it.copy(
                                 isLoading = false,

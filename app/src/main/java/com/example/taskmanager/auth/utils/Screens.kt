@@ -13,7 +13,11 @@ sealed class Screens(val route: String) {
             data object Admin : SignUp("signup/admin")
         }
 
-        data object VerifyOtp : AuthScreens("verify_otp")
+        sealed class VerifyOtp(route: String) : AuthScreens("verify_otp"){
+            data object Employee : VerifyOtp("employee")
+            data object Manager : VerifyOtp("manager")
+            data object Admin : VerifyOtp("admin")
+        }
 
         data object ChooseRole : AuthScreens("choose_role")
     }

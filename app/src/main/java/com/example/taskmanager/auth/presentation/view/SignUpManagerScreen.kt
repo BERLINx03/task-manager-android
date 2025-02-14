@@ -56,8 +56,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.taskmanager.auth.data.remote.requestmodels.VerificationRequestDto
 import com.example.taskmanager.auth.presentation.event.SignUpEmployeeUiEvent
+import com.example.taskmanager.auth.presentation.event.SignUpManagerUiEvent
 import com.example.taskmanager.auth.presentation.state.EmployeeSignupUiState
+import com.example.taskmanager.auth.presentation.state.ManagerSignupUiState
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpEmployeeViewModel
+import com.example.taskmanager.auth.presentation.viewmodel.SignUpManagerViewModel
 import com.example.taskmanager.auth.utils.Screens
 import java.time.Instant
 import java.time.ZoneId
@@ -66,10 +69,10 @@ import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SignUpEmployeeScreen(
-    onSignUpClick: (SignUpEmployeeUiEvent) -> Unit,
+fun SignUpManagerScreen(
+    onSignUpClick: (SignUpManagerUiEvent) -> Unit,
     navController: NavController,
-    viewModel: SignUpEmployeeViewModel
+    viewModel: SignUpManagerViewModel
 ) {
     val state by viewModel.signUpState.collectAsState()
     var isPasswordVisible by remember { mutableStateOf(false) }
@@ -140,8 +143,8 @@ fun SignUpEmployeeScreen(
 
             // First Name Field
             OutlinedTextField(
-                value = state.employeeSignupRequest.firstName,
-                onValueChange = { viewModel.onEvent(SignUpEmployeeUiEvent.OnFirstNameChange(it)) },
+                value = state.managerSignupRequest.firstName,
+                onValueChange = { viewModel.onEvent(SignUpManagerUiEvent.OnFirstNameChange(it)) },
                 label = { Text("First Name") },
                 leadingIcon = {
                     Icon(
@@ -158,8 +161,8 @@ fun SignUpEmployeeScreen(
 
             // Last Name Field
             OutlinedTextField(
-                value = state.employeeSignupRequest.lastName,
-                onValueChange = { viewModel.onEvent(SignUpEmployeeUiEvent.OnLastNameChange(it)) },
+                value = state.managerSignupRequest.lastName,
+                onValueChange = { viewModel.onEvent(SignUpManagerUiEvent.OnLastNameChange(it)) },
                 label = { Text("Last Name") },
                 leadingIcon = {
                     Icon(
@@ -176,10 +179,10 @@ fun SignUpEmployeeScreen(
 
             // Phone Number Field
             OutlinedTextField(
-                value = state.employeeSignupRequest.phoneNumber,
+                value = state.managerSignupRequest.phoneNumber,
                 onValueChange = { newValue ->
                     if (newValue.all { it.isDigit() }) {
-                        viewModel.onEvent(SignUpEmployeeUiEvent.OnPhoneNumberChange(newValue))
+                        viewModel.onEvent(SignUpManagerUiEvent.OnPhoneNumberChange(newValue))
                     }
                 },
                 label = { Text("Phone Number") },
@@ -228,7 +231,7 @@ fun SignUpEmployeeScreen(
                         text = { Text("Male") },
                         onClick = {
                             selectedGender = "Male"
-                            viewModel.onEvent(SignUpEmployeeUiEvent.OnGenderChange(0))
+                            viewModel.onEvent(SignUpManagerUiEvent.OnGenderChange(0))
                             expandGenderDropdown = false
                         }
                     )
@@ -236,7 +239,7 @@ fun SignUpEmployeeScreen(
                         text = { Text("Female") },
                         onClick = {
                             selectedGender = "Female"
-                            viewModel.onEvent(SignUpEmployeeUiEvent.OnGenderChange(1))
+                            viewModel.onEvent(SignUpManagerUiEvent.OnGenderChange(1))
                             expandGenderDropdown = false
                         }
                     )
@@ -247,7 +250,7 @@ fun SignUpEmployeeScreen(
 
             // Birth Date Field
             OutlinedTextField(
-                value = state.employeeSignupRequest.birthDate,
+                value = state.managerSignupRequest.birthDate,
                 onValueChange = {},
                 label = { Text("Birth Date") },
                 leadingIcon = {
@@ -275,16 +278,16 @@ fun SignUpEmployeeScreen(
                     try {
                         val uuid = UUID.fromString(newValue)
                         viewModel.onEvent(
-                            SignUpEmployeeUiEvent.OnDepartmentIdChange(
+                            SignUpManagerUiEvent.OnDepartmentIdChange(
                                 value = newValue,
                                 departmentId = uuid
                             )
                         )
                     } catch (e: IllegalArgumentException) {
                         viewModel.onEvent(
-                            SignUpEmployeeUiEvent.OnDepartmentIdChange(
+                            SignUpManagerUiEvent.OnDepartmentIdChange(
                                 value = newValue,
-                                departmentId = state.employeeSignupRequest.departmentId // keep existing UUID
+                                departmentId = state.managerSignupRequest.departmentId // keep existing UUID
                             )
                         )
                     }
@@ -304,8 +307,8 @@ fun SignUpEmployeeScreen(
 
             // Username/Email Field
             OutlinedTextField(
-                value = state.employeeSignupRequest.username,
-                onValueChange = { viewModel.onEvent(SignUpEmployeeUiEvent.OnUsernameChange(it)) },
+                value = state.managerSignupRequest.username,
+                onValueChange = { viewModel.onEvent(SignUpManagerUiEvent.OnUsernameChange(it)) },
                 label = { Text("Email") },
                 leadingIcon = {
                     Icon(
@@ -323,8 +326,8 @@ fun SignUpEmployeeScreen(
 
             // Password Field
             OutlinedTextField(
-                value = state.employeeSignupRequest.password,
-                onValueChange = { viewModel.onEvent(SignUpEmployeeUiEvent.OnPasswordChange(it)) },
+                value = state.managerSignupRequest.password,
+                onValueChange = { viewModel.onEvent(SignUpManagerUiEvent.OnPasswordChange(it)) },
                 label = { Text("Password") },
                 leadingIcon = {
                     Icon(
@@ -356,9 +359,9 @@ fun SignUpEmployeeScreen(
             Button(
                 onClick = {
                     onSignUpClick(
-                        SignUpEmployeeUiEvent.OnVerifyEmail(state.employeeSignupRequest.username.toVerificationRequestDto())
+                        SignUpManagerUiEvent.OnVerifyEmail(state.managerSignupRequest.username.toVerificationRequestDto())
                     )
-                    navController.navigate(Screens.AuthScreens.VerifyOtp.Employee.route)
+                    navController.navigate(Screens.AuthScreens.VerifyOtp.Manager.route)
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -408,7 +411,7 @@ fun SignUpEmployeeScreen(
                                 .atZone(ZoneId.systemDefault())
                                 .toLocalDate()
                             val formattedDate = localDate.format(dateFormatter)
-                            viewModel.onEvent(SignUpEmployeeUiEvent.OnBirthDateChange(formattedDate))
+                            viewModel.onEvent(SignUpManagerUiEvent.OnBirthDateChange(formattedDate))
                         }
                         showDatePicker = false
                     }
@@ -432,16 +435,11 @@ fun SignUpEmployeeScreen(
     }
 }
 
-private fun isFormValid(state: EmployeeSignupUiState): Boolean {
-    return state.employeeSignupRequest.firstName.isNotBlank() &&
-            state.employeeSignupRequest.lastName.isNotBlank() &&
-            state.employeeSignupRequest.phoneNumber.isNotBlank() &&
-            state.employeeSignupRequest.birthDate.isNotBlank() &&
-            state.employeeSignupRequest.username.isNotBlank() &&
-            state.employeeSignupRequest.password.isNotBlank()
-}
-
-
-fun String.toVerificationRequestDto(): VerificationRequestDto {
-    return VerificationRequestDto(email = this)
+private fun isFormValid(state: ManagerSignupUiState): Boolean {
+    return state.managerSignupRequest.firstName.isNotBlank() &&
+            state.managerSignupRequest.lastName.isNotBlank() &&
+            state.managerSignupRequest.phoneNumber.isNotBlank() &&
+            state.managerSignupRequest.birthDate.isNotBlank() &&
+            state.managerSignupRequest.username.isNotBlank() &&
+            state.managerSignupRequest.password.isNotBlank()
 }

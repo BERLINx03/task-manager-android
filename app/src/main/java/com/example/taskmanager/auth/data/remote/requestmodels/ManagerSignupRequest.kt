@@ -8,5 +8,6 @@ data class ManagerSignupRequest(
     val birthDate: String,
     val departmentId: String,
     val username: String,
-    val password: String
+    val password: String,
+    val otpEmailVerifyCode: String
 )

@@ -10,7 +10,8 @@ data class AdminSignupUiState(
         gender = 0,
         birthDate = "",
         username = "",
-        password = ""
+        password = "",
+        otpEmailVerifyCode = ""
     ),
     val isLoading: Boolean = false,
     val error: String? = null,

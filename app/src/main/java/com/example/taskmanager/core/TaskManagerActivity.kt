@@ -14,6 +14,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.taskmanager.auth.presentation.view.LoginScreen
+import com.example.taskmanager.auth.presentation.view.OtpVerificationScreen
 import com.example.taskmanager.auth.presentation.view.RoleSelectionScreen
 import com.example.taskmanager.auth.presentation.view.SignUpEmployeeScreen
 import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
@@ -57,6 +58,16 @@ class TaskManagerActivity : ComponentActivity() {
                             composable(Screens.AuthScreens.SignUp.Employee.route) {
                                 SignUpEmployeeScreen(
                                     onSignUpClick = {
+                                        signUpEmployeeViewModel.onEvent(it)
+                                    },
+                                    navController = navController,
+                                    viewModel = signUpEmployeeViewModel
+                                )
+                            }
+
+                            composable(Screens.AuthScreens.VerifyOtp.route){
+                                OtpVerificationScreen(
+                                    onVerifyClick = {
                                         signUpEmployeeViewModel.onEvent(it)
                                     },
                                     navController = navController,

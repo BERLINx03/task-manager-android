@@ -3,8 +3,11 @@ package com.example.taskmanager.auth.data.remote
 import com.example.taskmanager.auth.data.remote.reponsemodels.ResponseDto
 import com.example.taskmanager.auth.data.remote.requestmodels.AdminSignupRequest
 import com.example.taskmanager.auth.data.remote.requestmodels.EmployeeSignupRequest
+import com.example.taskmanager.auth.data.remote.requestmodels.ForgetPasswordRequestDto
 import com.example.taskmanager.auth.data.remote.requestmodels.LoginRequest
 import com.example.taskmanager.auth.data.remote.requestmodels.ManagerSignupRequest
+import com.example.taskmanager.auth.data.remote.requestmodels.ResetPasswordRequestDto
+import com.example.taskmanager.auth.data.remote.requestmodels.VerificationRequestDto
 import retrofit2.http.Body
 import retrofit2.http.POST
 
@@ -31,5 +34,20 @@ interface AuthApi {
     @POST("/Auth/SignUp/Admin")
     suspend fun signUpAdmin(
         @Body adminSignupRequest: AdminSignupRequest
+    ): ResponseDto<String>
+
+    @POST("/Auth/Email/Verify")
+    suspend fun verifyEmail(
+        @Body verificationRequestDto: VerificationRequestDto
+    ): ResponseDto<String>
+
+    @POST("/Auth/Password/Forget")
+    suspend fun forgetPassword(
+        @Body forgetPasswordRequestDto: ForgetPasswordRequestDto
+    ): ResponseDto<String>
+
+    @POST("/Auth/Password/Reset")
+    suspend fun resetPassword(
+        @Body resetPasswordRequestDto: ResetPasswordRequestDto
     ): ResponseDto<String>
 }

@@ -1,6 +1,7 @@
 package com.example.taskmanager.auth.presentation.event
 
 import com.example.taskmanager.auth.data.remote.requestmodels.EmployeeSignupRequest
+import com.example.taskmanager.auth.data.remote.requestmodels.VerificationRequestDto
 import java.util.UUID
 
 /**
@@ -8,6 +9,8 @@ import java.util.UUID
  */
 sealed class SignUpEmployeeUiEvent{
     data class Loading(val message: String?) : SignUpEmployeeUiEvent()
+    data class OnOtpChange(val otp: String) : SignUpEmployeeUiEvent()
+    data class OnVerifyEmail(val verificationRequestDto: VerificationRequestDto) : SignUpEmployeeUiEvent()
     data class SignUpEmployee(val employeeSignupRequest: EmployeeSignupRequest) : SignUpEmployeeUiEvent()
     data class OnFirstNameChange(val firstName: String) : SignUpEmployeeUiEvent()
     data class OnLastNameChange(val lastName: String) : SignUpEmployeeUiEvent()

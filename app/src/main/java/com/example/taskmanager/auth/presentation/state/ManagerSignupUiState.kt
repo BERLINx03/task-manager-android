@@ -12,6 +12,7 @@ data class ManagerSignupUiState(
         departmentId = "",
         username = "",
         password = "",
+        otpEmailVerifyCode = ""
     ),
     val isLoading: Boolean = false,
     val error: String? = null,

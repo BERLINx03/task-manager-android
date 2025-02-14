@@ -7,5 +7,6 @@ data class AdminSignupRequest(
     val gender: Int,
     val birthDate: String,
     val username: String,
-    val password: String
+    val password: String,
+    val otpEmailVerifyCode: String
 )

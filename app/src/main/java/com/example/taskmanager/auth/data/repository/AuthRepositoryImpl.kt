@@ -6,8 +6,11 @@ import com.example.taskmanager.auth.data.remote.AuthApi
 import com.example.taskmanager.auth.data.remote.reponsemodels.ResponseDto
 import com.example.taskmanager.auth.data.remote.requestmodels.AdminSignupRequest
 import com.example.taskmanager.auth.data.remote.requestmodels.EmployeeSignupRequest
+import com.example.taskmanager.auth.data.remote.requestmodels.ForgetPasswordRequestDto
 import com.example.taskmanager.auth.data.remote.requestmodels.LoginRequest
 import com.example.taskmanager.auth.data.remote.requestmodels.ManagerSignupRequest
+import com.example.taskmanager.auth.data.remote.requestmodels.ResetPasswordRequestDto
+import com.example.taskmanager.auth.data.remote.requestmodels.VerificationRequestDto
 import com.example.taskmanager.auth.domain.repository.AuthRepository
 import com.example.taskmanager.auth.utils.AuthResult
 import retrofit2.HttpException
@@ -111,6 +114,8 @@ class AuthRepositoryImpl @Inject constructor(
             val response = api.signUpManager(manager)
             when (response.statusCode) {
                 HttpURLConnection.HTTP_OK, HttpURLConnection.HTTP_CREATED -> {
+                    Log.d(AUTH_REPOSITORY_TAG,"Manager signup successful")
+
                     AuthResult.Authenticated(response)
                 }
 
@@ -144,6 +149,7 @@ class AuthRepositoryImpl @Inject constructor(
             val response = api.signUpAdmin(admin)
             when (response.statusCode) {
                 HttpURLConnection.HTTP_OK, HttpURLConnection.HTTP_CREATED -> {
+                    Log.d(AUTH_REPOSITORY_TAG,"Admin signup successful")
                     AuthResult.Authenticated(response)
                 }
 
@@ -155,6 +161,104 @@ class AuthRepositoryImpl @Inject constructor(
                 HttpURLConnection.HTTP_NOT_FOUND -> AuthResult.UnknownError("Not Found")
                 HttpURLConnection.HTTP_INTERNAL_ERROR -> AuthResult.UnknownError("Server Error")
 
+                else -> {
+                    Log.e(AUTH_REPOSITORY_TAG, "Unexpected response code: ${response.statusCode}")
+                    AuthResult.UnknownError("Unexpected Error: ${response.statusCode}")
+                }
+            }
+        } catch (e: IOException) {
+            Log.e(AUTH_REPOSITORY_TAG, "Network Failure", e)
+            AuthResult.UnknownError("Network Failure: ${e.localizedMessage}")
+        } catch (e: HttpException) {
+            Log.e(AUTH_REPOSITORY_TAG, "HTTP Error", e)
+            AuthResult.UnknownError("HTTP Error: ${e.message()}")
+        } catch (e: Exception) {
+            Log.e(AUTH_REPOSITORY_TAG, "Unknown Error", e)
+            AuthResult.UnknownError("Unknown Error: ${e.localizedMessage}")
+        }
+    }
+
+    override suspend fun verifyEmail(verification: VerificationRequestDto): AuthResult<ResponseDto<String>> {
+        return try {
+            val response = api.verifyEmail(verification)
+            when (response.statusCode) {
+                HttpURLConnection.HTTP_OK, HttpURLConnection.HTTP_CREATED -> {
+                    Log.d(AUTH_REPOSITORY_TAG,"Email verification successful")
+                    AuthResult.Authenticated(response)
+                }
+                HttpURLConnection.HTTP_BAD_REQUEST,
+                HttpURLConnection.HTTP_CONFLICT -> AuthResult.UnknownError(response.message)
+                HttpURLConnection.HTTP_UNAUTHORIZED -> AuthResult.UnAuthenticated()
+                HttpURLConnection.HTTP_FORBIDDEN -> AuthResult.UnknownError("Access Denied")
+                HttpURLConnection.HTTP_NOT_FOUND -> AuthResult.UnknownError("Not Found")
+                HttpURLConnection.HTTP_INTERNAL_ERROR -> AuthResult.UnknownError("Server Error")
+
+                else -> {
+                    Log.e(AUTH_REPOSITORY_TAG, "Unexpected response code: ${response.statusCode}")
+                    AuthResult.UnknownError("Unexpected Error: ${response.statusCode}")
+                }
+            }
+
+        } catch (e: IOException) {
+            Log.e(AUTH_REPOSITORY_TAG, "Network Failure", e)
+            AuthResult.UnknownError("Network Failure: ${e.localizedMessage}")
+        } catch (e: HttpException) {
+            Log.e(AUTH_REPOSITORY_TAG, "HTTP Error", e)
+            AuthResult.UnknownError("HTTP Error: ${e.message()}")
+        } catch (e: Exception) {
+            Log.e(AUTH_REPOSITORY_TAG, "Unknown Error", e)
+            AuthResult.UnknownError("Unknown Error: ${e.localizedMessage}")
+        }
+    }
+
+    override suspend fun forgetPassword(forgetPassword: ForgetPasswordRequestDto): AuthResult<ResponseDto<String>> {
+        return try {
+            val response = api.forgetPassword(forgetPassword)
+            when (response.statusCode) {
+                HttpURLConnection.HTTP_OK, HttpURLConnection.HTTP_CREATED -> {
+                    Log.d(AUTH_REPOSITORY_TAG,"Forget password successful")
+                    AuthResult.Authenticated(response)
+                }
+                HttpURLConnection.HTTP_BAD_REQUEST,
+                HttpURLConnection.HTTP_CONFLICT -> AuthResult.UnknownError(response.message)
+
+                HttpURLConnection.HTTP_UNAUTHORIZED -> AuthResult.UnAuthenticated()
+                HttpURLConnection.HTTP_FORBIDDEN -> AuthResult.UnknownError("Access Denied")
+                HttpURLConnection.HTTP_NOT_FOUND -> AuthResult.UnknownError("Not Found")
+
+                HttpURLConnection.HTTP_INTERNAL_ERROR -> AuthResult.UnknownError("Server Error")
+                else -> {
+                    Log.e(AUTH_REPOSITORY_TAG, "Unexpected response code: ${response.statusCode}")
+                    AuthResult.UnknownError("Unexpected Error: ${response.statusCode}")
+                }
+            }
+        } catch (e: IOException) {
+            Log.e(AUTH_REPOSITORY_TAG, "Network Failure", e)
+            AuthResult.UnknownError("Network Failure: ${e.localizedMessage}")
+        } catch (e: HttpException) {
+            Log.e(AUTH_REPOSITORY_TAG, "HTTP Error", e)
+            AuthResult.UnknownError("HTTP Error: ${e.message()}")
+        } catch (e: Exception) {
+            Log.e(AUTH_REPOSITORY_TAG, "Unknown Error", e)
+            AuthResult.UnknownError("Unknown Error: ${e.localizedMessage}")
+        }
+    }
+
+    override suspend fun resetPassword(resetPassword: ResetPasswordRequestDto): AuthResult<ResponseDto<String>> {
+        return try {
+            val response = api.resetPassword(resetPassword)
+            when (response.statusCode) {
+                HttpURLConnection.HTTP_OK, HttpURLConnection.HTTP_CREATED -> {
+                    Log.d(AUTH_REPOSITORY_TAG,"Reset password successful")
+                    AuthResult.Authenticated(response)
+                }
+                HttpURLConnection.HTTP_BAD_REQUEST,
+                HttpURLConnection.HTTP_CONFLICT -> AuthResult.UnknownError(response.message)
+                HttpURLConnection.HTTP_UNAUTHORIZED -> AuthResult.UnAuthenticated()
+                HttpURLConnection.HTTP_FORBIDDEN -> AuthResult.UnknownError("Access Denied")
+                HttpURLConnection.HTTP_NOT_FOUND -> AuthResult.UnknownError("Not Found")
+
+                HttpURLConnection.HTTP_INTERNAL_ERROR -> AuthResult.UnknownError("Server Error")
                 else -> {
                     Log.e(AUTH_REPOSITORY_TAG, "Unexpected response code: ${response.statusCode}")
                     AuthResult.UnknownError("Unexpected Error: ${response.statusCode}")

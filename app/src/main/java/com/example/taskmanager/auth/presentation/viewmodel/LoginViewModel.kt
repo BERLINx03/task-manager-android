@@ -110,11 +110,14 @@ class LoginViewModel @Inject constructor(
                     )
                 }
 
-                is AuthResult.Loading -> {
-                    _loginState.value = _loginState.value.copy(
-                        isLoading = true,
-                        error = null
-                    )
+                is AuthResult.SignedOut -> {
+                    _loginState.update {
+                        it.copy(
+                            isLoading = false,
+                            isAuthenticated = false,
+                            error = null
+                        )
+                    }
                 }
             }
         }

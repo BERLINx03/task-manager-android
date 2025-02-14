@@ -10,5 +10,6 @@ data class EmployeeSignupRequest(
     val birthDate: String,
     val departmentId: UUID,
     val username: String,
-    val password: String
+    val password: String,
+    val otpEmailVerifyCode: String
 )

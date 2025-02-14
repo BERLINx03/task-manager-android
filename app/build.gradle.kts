@@ -67,7 +67,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     //navigation
-    implementation("androidx.navigation:navigation-compose:2.8.6")
+    implementation("androidx.navigation:navigation-compose:2.8.7")
 
 
     //room
@@ -77,7 +77,7 @@ dependencies {
     kapt("androidx.room:room-compiler:2.6.1")
 
     //more icons
-    implementation("androidx.compose.material:material-icons-extended:1.7.7")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
 
 
     //dataStore preference

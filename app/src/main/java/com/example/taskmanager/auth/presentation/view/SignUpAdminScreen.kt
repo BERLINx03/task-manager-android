@@ -110,7 +110,7 @@ fun SignUpAdminScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                text = "Create Employee Account",
+                text = "Create Admin Account",
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold
                 )

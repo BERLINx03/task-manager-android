@@ -5,6 +5,7 @@ import com.example.taskmanager.core.domain.repository.LanguageRepository
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -23,6 +24,10 @@ class TaskManagerApplication: Application() {
                 .let { languageCode ->
                     languageRepository.setLanguage(languageCode)
                 }
+        }
+
+        if (BuildConfig.DEBUG){
+            Timber.plant(Timber.DebugTree())
         }
     }
 }

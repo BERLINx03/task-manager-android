@@ -59,7 +59,8 @@ kapt {
 }
 dependencies {
 
-
+    //Timber is a lightweight logging library
+    implementation("com.jakewharton.timber:timber:5.0.1")
     //retrofit and serialization
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
@@ -74,6 +75,8 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     implementation("androidx.room:room-runtime:2.6.1")
     implementation(libs.androidx.storage)
+    implementation(libs.material)
+    implementation(libs.androidx.compose.material)
     kapt("androidx.room:room-compiler:2.6.1")
 
     //more icons

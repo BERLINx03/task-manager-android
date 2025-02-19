@@ -11,5 +11,6 @@ data class LoginUiState(
     val newPassword: String = "",
     val isLoading: Boolean = false,
     val error: String? = null,
-    val isAuthenticated: Boolean = false
+    val isAuthenticated: Boolean = false,
+    val role: String = ""
 )

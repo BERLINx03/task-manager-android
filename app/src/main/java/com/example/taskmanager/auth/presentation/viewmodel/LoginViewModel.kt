@@ -219,7 +219,8 @@ class LoginViewModel @Inject constructor(
                         it.copy(
                             isLoading = false,
                             isAuthenticated = true,
-                            error = null
+                            error = null,
+                            role = result.data?.data?.role ?: ""
                         )
                     }
                 }
@@ -249,12 +250,12 @@ class LoginViewModel @Inject constructor(
                         it.copy(
                             isLoading = false,
                             isAuthenticated = false,
-                            error = null
+                            error = null,
+                            role = ""
                         )
                     }
                 }
             }
         }
     }
-
 }

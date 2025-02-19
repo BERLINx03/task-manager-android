@@ -34,7 +34,6 @@ class AuthRepositoryImpl @Inject constructor(
 
             when (response.statusCode) {
                 HttpURLConnection.HTTP_OK, HttpURLConnection.HTTP_CREATED -> {
-                    // Check if we have valid token data
                     val token = response.data?.token?.accessToken
                     if (token.isNullOrEmpty()) {
                         AuthResult.UnknownError("Empty token received")

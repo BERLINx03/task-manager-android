@@ -1,7 +1,8 @@
-package com.example.taskmanager.auth.di
+package com.example.taskmanager.core.di
 
 import android.content.Context
 import com.example.taskmanager.BuildConfig
+import com.example.taskmanager.admin.data.remote.AdminServiceApi
 import com.example.taskmanager.auth.data.local.TokenDataStore
 import com.example.taskmanager.auth.data.remote.AuthApi
 import dagger.Module
@@ -23,7 +24,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object AuthModule {
+object AdminApiModule {
 
     private const val BASE_URL = "https://10.0.2.2:7176"
 
@@ -52,7 +53,6 @@ object AuthModule {
         tokenDataStore: TokenDataStore,
         @Named("unsafeTrustManager") trustManager: X509TrustManager
     ): OkHttpClient {
-        // Create SSL context that trusts all certificates (for development only)
         val sslContext = SSLContext.getInstance("SSL")
         sslContext.init(null, arrayOf(trustManager), java.security.SecureRandom())
 
@@ -90,8 +90,8 @@ object AuthModule {
 
     @Provides
     @Singleton
-    fun provideAuthApiService(retrofit: Retrofit): AuthApi {
-        return retrofit.create(AuthApi::class.java)
+    fun provideAuthApiService(retrofit: Retrofit): AdminServiceApi {
+        return retrofit.create(AdminServiceApi::class.java)
     }
 
     @Provides

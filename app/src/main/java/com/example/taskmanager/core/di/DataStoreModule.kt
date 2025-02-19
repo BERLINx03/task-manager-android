@@ -1,6 +1,7 @@
 package com.example.taskmanager.core.di
 
 import android.content.Context
+import com.example.taskmanager.auth.data.local.TokenDataStore
 import com.example.taskmanager.core.data.local.LanguageDataStore
 import com.example.taskmanager.core.data.local.repository.LanguageRepositoryImpl
 import com.example.taskmanager.core.domain.repository.LanguageRepository
@@ -13,7 +14,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object LanguageModule {
+object DataStoreModule {
 
     @Provides
     @Singleton
@@ -29,4 +30,12 @@ object LanguageModule {
     ): LanguageRepository {
         return LanguageRepositoryImpl(languageDataStore, context)
     }
+
+
+    @Provides
+    @Singleton
+    fun provideTokenDataStore(@ApplicationContext context: Context): TokenDataStore {
+        return TokenDataStore(context)
+    }
+
 }

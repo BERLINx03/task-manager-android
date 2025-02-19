@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,30 +12,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Divider
-import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationDrawerItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Build
@@ -50,21 +33,32 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipDefaults
-
-// ViewModel and State Management
 import kotlinx.coroutines.launch
+
 /**
  * @author Abdallah Elsokkary
  */
@@ -72,6 +66,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(
     navController: NavController,
+    innerPadding: PaddingValues
 ) {
     // State for managing the navigation drawer
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -161,62 +156,40 @@ fun HomeScreen(
             }
         }
     ) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(
-                                text = "Welcome",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                text = "currentUser.fullName",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(
-                            onClick = {
-                                scope.launch {
-                                    drawerState.open()
-                                }
-                            }
-                        ) {
-                            Icon(Icons.Default.Menu, "Open Menu")
-                        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = "Welcome",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = "currentUser.fullName",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
-                )
-            },
-            bottomBar = {
-                NavigationBar {
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Home, "Home") },
-                        label = { Text("Home") },
-                        selected = true,
-                        onClick = { /* Handle home navigation */ }
-                    )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Business, "Departments") },
-                        label = { Text("Departments") },
-                        selected = false,
-                        onClick = { /* Handle departments navigation */ }
-                    )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Task, "Tasks") },
-                        label = { Text("Tasks") },
-                        selected = false,
-                        onClick = { /* Handle tasks navigation */ }
-                    )
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                drawerState.open()
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Default.Menu, "Open Menu")
+                    }
                 }
-            }
-        ) { paddingValues ->
+            )
             // Main content
             Box(
                 modifier = Modifier
+                    .weight(1f)
                     .fillMaxSize()
-                    .padding(paddingValues)
             ) {
                 DashboardContent(
                     stats = DashboardStats(
@@ -242,6 +215,28 @@ fun HomeScreen(
                     )
                 )
             }
+
+            NavigationBar {
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Home, "Home") },
+                    label = { Text("Home") },
+                    selected = true,
+                    onClick = { /* Handle home navigation */ }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Business, "Departments") },
+                    label = { Text("Departments") },
+                    selected = false,
+                    onClick = { /* Handle departments navigation */ }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Task, "Tasks") },
+                    label = { Text("Tasks") },
+                    selected = false,
+                    onClick = { /* Handle tasks navigation */ }
+                )
+            }
+
         }
     }
 }
@@ -269,87 +264,85 @@ fun DashboardContent(
     stats: DashboardStats,
     recentTasks: List<TaskItem>
 ) {
-    Column(
+    LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Statistics Cards Grid
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // Admin Card
-            item {
-                StatisticCard(
-                    icon = Icons.Default.AdminPanelSettings,
-                    title = "Admins",
-                    count = stats.adminCount,
-                    backgroundColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            }
+        item {
+            LazyHorizontalGrid(
+                rows = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(280.dp)
+            ) {
+                // Admin Card
+                item {
+                    StatisticCard(
+                        icon = Icons.Default.AdminPanelSettings,
+                        title = "Admins",
+                        count = stats.adminCount,
+                        backgroundColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                }
 
-            // Manager Card
-            item {
-                StatisticCard(
-                    icon = Icons.Default.SupervisorAccount,
-                    title = "Managers",
-                    count = stats.managerCount,
-                    backgroundColor = MaterialTheme.colorScheme.secondaryContainer
-                )
-            }
+                // Manager Card
+                item {
+                    StatisticCard(
+                        icon = Icons.Default.SupervisorAccount,
+                        title = "Managers",
+                        count = stats.managerCount,
+                        backgroundColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                }
 
-            // Employee Card
-            item {
-                StatisticCard(
-                    icon = Icons.Default.Group,
-                    title = "Employees",
-                    count = stats.employeeCount,
-                    backgroundColor = MaterialTheme.colorScheme.tertiaryContainer
-                )
-            }
+                // Employee Card
+                item {
+                    StatisticCard(
+                        icon = Icons.Default.Group,
+                        title = "Employees",
+                        count = stats.employeeCount,
+                        backgroundColor = MaterialTheme.colorScheme.tertiaryContainer
+                    )
+                }
 
-            // Task Card
-            item {
-                StatisticCard(
-                    icon = Icons.Default.Task,
-                    title = "Tasks",
-                    count = stats.taskCount,
-                    backgroundColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            }
+                // Task Card
+                item {
+                    StatisticCard(
+                        icon = Icons.Default.Task,
+                        title = "Tasks",
+                        count = stats.taskCount,
+                        backgroundColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                }
 
-            // Department Card (spans full width)
-            item(span = { GridItemSpan(2) }) {
-                StatisticCard(
-                    icon = Icons.Default.Business,
-                    title = "Departments",
-                    count = stats.departmentCount,
-                    backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                // Department Card
+                item {
+                    StatisticCard(
+                        icon = Icons.Default.Business,
+                        title = "Departments",
+                        count = stats.departmentCount,
+                        backgroundColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        // Recent Tasks Header
+        item {
+            Text(
+                text = "Recent Tasks",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
 
-        // Recent Tasks Section
-        Text(
-            text = "Recent Tasks",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            items(recentTasks) { task ->
-                TaskCard(task = task)
-            }
+        // Recent Tasks Items
+        items(recentTasks) { task ->
+            TaskCard(task = task)
         }
     }
 }
@@ -359,13 +352,13 @@ fun StatisticCard(
     icon: ImageVector,
     title: String,
     count: Int,
-    backgroundColor: androidx.compose.ui.graphics.Color,
+    backgroundColor: Color,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
-            .height(120.dp)
-            .fillMaxWidth(),
+            .width(160.dp)
+            .height(120.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
         Column(
@@ -461,10 +454,4 @@ fun TaskStatusChip(
         ),
         modifier = modifier
     )
-}
-@Preview
-@Composable
-fun PreviewHomeScreen() {
-    HomeScreen(navController = NavController(LocalContext.current))
-
 }

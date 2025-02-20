@@ -24,4 +24,12 @@ sealed class Screens(val route: String) {
 
         data object ChooseRole : AuthScreens("choose_role")
     }
+
+    data object SplashScreen: Screens("splash_screen")
+
+    sealed class AppScreens(route: String) : Screens(route) {
+        data object Dashboard : AppScreens("dashboard")
+        data object Profile : AppScreens("profile")
+        data object Tasks : AppScreens("tasks")
+    }
 }

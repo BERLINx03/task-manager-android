@@ -45,6 +45,16 @@ fun LoginScreen(
     val languageState = languageViewModel.currentLanguage.collectAsState()
     var isPasswordVisible by remember { mutableStateOf(false) }
 
+
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collect { route ->
+            navController.navigate(route) {
+                popUpTo(Screens.AuthScreens.Login.route) { inclusive = true }
+            }
+        }
+    }
+
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -213,7 +223,10 @@ fun LoginScreen(
 
             // Login Button
             Button(
-                onClick = { onLoginClick(LoginUiEvent.Login(state.value.loginRequest)) },
+                onClick = { onLoginClick(LoginUiEvent.Login(state.value.loginRequest))
+                          if (state.value.role == "Admin")
+                              navController.navigate(Screens.AppScreens.Dashboard.route)
+                          },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),

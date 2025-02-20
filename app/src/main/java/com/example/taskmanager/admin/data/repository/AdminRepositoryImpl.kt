@@ -19,6 +19,7 @@ import com.example.taskmanager.core.utils.Resource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import retrofit2.HttpException
@@ -215,6 +216,43 @@ class AdminRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Timber.e(e, "Unknown exception occurred")
             return Resource.Error("Unknown Error: ${e.localizedMessage}")
+        }
+    }
+
+    override suspend fun getCachedAdminsCount():Resource<Int> {
+        try {
+            val count = adminDao.getAdminsCountFlow().first()
+            return Resource.Success(count)
+        } catch (e: Exception) {
+            return Resource.Error("Failed to get admin count: ${e.message}")
+        }
+    }
+
+
+
+    override suspend fun getAdminsCountFromNetwork(): Flow<Resource<Int>> = flow {
+        emit(Resource.Loading(true))
+
+        if (!networkUtils.isNetworkAvailable()) {
+            emit(Resource.Error("No internet connection. Try again later."))
+            return@flow
+        }
+
+        try {
+            val adminsCountResponse = api.getAdmins(1,1).data?.totalCount
+
+            when {
+                adminsCountResponse == null ->
+                    emit(Resource.Error("Failed to get admin count"))
+                else ->
+                    emit(Resource.Success(adminsCountResponse))
+            }
+        } catch (e: IOException) {
+            emit(Resource.Error("Network error: ${e.message}"))
+        } catch (e: HttpException) {
+            emit(Resource.Error("HTTP error: ${e.message}"))
+        } catch (e: Exception) {
+            emit(Resource.Error("Unknown error: ${e.message}"))
         }
     }
 

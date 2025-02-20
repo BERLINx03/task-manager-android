@@ -20,12 +20,16 @@ class TokenDataStore(private val context: Context){
     companion object {
         private val TOKEN_KEY = stringPreferencesKey("auth_token")
         private val AUTH_STATE = booleanPreferencesKey("auth_state")
+        private val USER_ROLE = stringPreferencesKey("user_role")
     }
     val token: Flow<String?> = context.dataStore.data
         .map { preferences -> preferences[TOKEN_KEY] }
 
     val authState: Flow<Boolean?> = context.dataStore.data
         .map { preferences -> preferences[AUTH_STATE] }
+
+    val userRole: Flow<String?> = context.dataStore.data
+        .map { preferences -> preferences[USER_ROLE] }
 
     suspend fun saveToken(token: String) {
         context.dataStore.edit { prefs ->
@@ -36,6 +40,12 @@ class TokenDataStore(private val context: Context){
     suspend fun saveAuthState(state: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[AUTH_STATE] = state
+        }
+    }
+
+    suspend fun saveUserRole(role: String) {
+        context.dataStore.edit { prefs ->
+            prefs[USER_ROLE] = role
         }
     }
 

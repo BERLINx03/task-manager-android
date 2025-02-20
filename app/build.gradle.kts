@@ -69,6 +69,11 @@ dependencies {
 
     //navigation
     implementation("androidx.navigation:navigation-compose:2.8.7")
+    implementation("androidx.compose.animation:animation:1.7.8")
+
+
+    //splash
+    implementation("androidx.core:core-splashscreen:1.0.1")
 
 
     //room

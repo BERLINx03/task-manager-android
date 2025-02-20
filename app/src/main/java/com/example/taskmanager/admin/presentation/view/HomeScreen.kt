@@ -1,6 +1,7 @@
 package com.example.taskmanager.admin.presentation.view
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
@@ -49,6 +51,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,6 +60,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.taskmanager.admin.presentation.intents.DashboardIntents
+import com.example.taskmanager.admin.presentation.viewmodel.DashboardViewModel
+import com.example.taskmanager.auth.presentation.event.LoginUiEvent
+import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
+import com.example.taskmanager.auth.utils.Screens
 import kotlinx.coroutines.launch
 
 /**
@@ -65,6 +73,8 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    viewModel: DashboardViewModel,
+    loginViewModel: LoginViewModel,
     navController: NavController,
     innerPadding: PaddingValues
 ) {
@@ -72,6 +82,7 @@ fun HomeScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+    val state = viewModel.dashboardState.collectAsState().value
     // Current user state from ViewModel
 //    val currentUser by viewModel.currentUser.collectAsState()
 
@@ -153,6 +164,21 @@ fun HomeScreen(
                     onClick = { /* Handle employees navigation */ },
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
+
+                Spacer(Modifier.weight(1f))
+
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Logout, "Employees") },
+                    label = { Text("Logout") },
+                    selected = false,
+                    onClick = {
+                        loginViewModel.onEvent(LoginUiEvent.Logout)
+                        navController.navigate(Screens.AuthScreens.Login.route)
+                    },
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+
+                Spacer(Modifier.height(16.dp))
             }
         }
     ) {
@@ -192,13 +218,8 @@ fun HomeScreen(
                     .fillMaxSize()
             ) {
                 DashboardContent(
-                    stats = DashboardStats(
-                        adminCount = 5,
-                        managerCount = 12,
-                        employeeCount = 48,
-                        taskCount = 156,
-                        departmentCount = 8
-                    ),
+                    stats = state.adminsCount,
+                    viewModel = viewModel,
                     recentTasks = listOf(
                         TaskItem(
                             title = "Update Employee Handbook",
@@ -261,7 +282,8 @@ data class TaskItem(
 @Composable
 fun DashboardContent(
     modifier: Modifier = Modifier,
-    stats: DashboardStats,
+    stats: Int,
+    viewModel: DashboardViewModel,
     recentTasks: List<TaskItem>
 ) {
     LazyColumn(
@@ -284,8 +306,9 @@ fun DashboardContent(
                     StatisticCard(
                         icon = Icons.Default.AdminPanelSettings,
                         title = "Admins",
-                        count = stats.adminCount,
-                        backgroundColor = MaterialTheme.colorScheme.primaryContainer
+                        count = stats,
+                        backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+                        viewModel = viewModel
                     )
                 }
 
@@ -294,8 +317,9 @@ fun DashboardContent(
                     StatisticCard(
                         icon = Icons.Default.SupervisorAccount,
                         title = "Managers",
-                        count = stats.managerCount,
-                        backgroundColor = MaterialTheme.colorScheme.secondaryContainer
+                        count = 0,
+                        backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                        viewModel = viewModel
                     )
                 }
 
@@ -304,8 +328,9 @@ fun DashboardContent(
                     StatisticCard(
                         icon = Icons.Default.Group,
                         title = "Employees",
-                        count = stats.employeeCount,
-                        backgroundColor = MaterialTheme.colorScheme.tertiaryContainer
+                        count = 0,
+                        backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        viewModel = viewModel
                     )
                 }
 
@@ -314,8 +339,9 @@ fun DashboardContent(
                     StatisticCard(
                         icon = Icons.Default.Task,
                         title = "Tasks",
-                        count = stats.taskCount,
-                        backgroundColor = MaterialTheme.colorScheme.surfaceVariant
+                        count = 9,
+                        backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                        viewModel = viewModel
                     )
                 }
 
@@ -324,8 +350,9 @@ fun DashboardContent(
                     StatisticCard(
                         icon = Icons.Default.Business,
                         title = "Departments",
-                        count = stats.departmentCount,
-                        backgroundColor = MaterialTheme.colorScheme.errorContainer
+                        count = 9,
+                        backgroundColor = MaterialTheme.colorScheme.errorContainer,
+                        viewModel = viewModel
                     )
                 }
             }
@@ -353,12 +380,16 @@ fun StatisticCard(
     title: String,
     count: Int,
     backgroundColor: Color,
+    viewModel: DashboardViewModel,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
             .width(160.dp)
-            .height(120.dp),
+            .height(120.dp)
+            .clickable {
+                viewModel.onIntent(DashboardIntents.GetAdminsCount)
+            },
         colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
         Column(

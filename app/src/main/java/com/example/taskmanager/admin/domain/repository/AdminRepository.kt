@@ -28,6 +28,10 @@ interface AdminRepository {
         isRefreshing: Boolean
     ): Flow<Resource<ResponseDto<PaginatedData<Admin>>>>
 
+    suspend fun getCachedAdminsCount(): Resource<Int>
+
+    suspend fun getAdminsCountFromNetwork(): Flow<Resource<Int>>
+
     suspend fun updateAdmin(admin: UpdateAdminRequestDto): Resource<String>
 
 

@@ -10,6 +10,7 @@ import com.example.taskmanager.auth.data.remote.requestmodels.ResetPasswordReque
 sealed class LoginUiEvent {
     data class Loading(val message: String?) : LoginUiEvent()
     data class Login(val loginRequest: LoginRequest) : LoginUiEvent()
+    data object Logout : LoginUiEvent()
     data class OnUsernameChange(val username: String) : LoginUiEvent()
     data class OnPasswordChange(val password: String) : LoginUiEvent()
     data class ForgotPassword(val forgotPasswordRequest: ForgotPasswordRequestDto) : LoginUiEvent()

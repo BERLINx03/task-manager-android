@@ -1,5 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="splash_background">#FFFFFF</color>
+    <color name="status_bar_color">#EEEEEE</color>
 
-    <style name="Theme.TaskManager" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Splash screen theme -->
+    <style name="Theme.TaskManager.Splash" parent="Theme.SplashScreen">
+        <!-- Clean white background -->
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+
+        <!-- Use a proper vector logo with clear edges -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_task_manager_logo</item>
+
+        <!-- Animation duration - keep it short but smooth -->
+        <item name="windowSplashScreenAnimationDuration">500</item>
+
+        <!-- IMPORTANT: This defines what theme to use after splash screen -->
+        <item name="postSplashScreenTheme">@style/Theme.TaskManager</item>
+    </style>
+
+    <!-- Make sure your main app theme has no action bar -->
+    <style name="Theme.TaskManager" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <!-- Other styling attributes... -->
+    </style>
 </resources>

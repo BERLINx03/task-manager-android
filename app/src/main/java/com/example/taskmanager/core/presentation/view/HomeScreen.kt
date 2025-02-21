@@ -1,4 +1,4 @@
-package com.example.taskmanager.admin.presentation.view
+package com.example.taskmanager.core.presentation.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,12 +20,12 @@ import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
@@ -35,9 +35,9 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,6 +49,9 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -60,11 +63,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.taskmanager.admin.presentation.intents.DashboardIntents
-import com.example.taskmanager.admin.presentation.viewmodel.DashboardViewModel
+import com.example.taskmanager.core.presentation.intents.DashboardIntents
+import com.example.taskmanager.core.presentation.state.DashboardState
+import com.example.taskmanager.core.presentation.viewmodel.DashboardViewModel
 import com.example.taskmanager.auth.presentation.event.LoginUiEvent
 import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
-import com.example.taskmanager.auth.utils.Screens
+import com.example.taskmanager.core.utils.Screens
 import kotlinx.coroutines.launch
 
 /**
@@ -83,8 +87,9 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
 
     val state = viewModel.dashboardState.collectAsState().value
-    // Current user state from ViewModel
-//    val currentUser by viewModel.currentUser.collectAsState()
+    val user = viewModel.dashboardState.collectAsState().value.user
+    val isRefreshing = state.isRefreshing
+    val pullRefreshState = rememberPullToRefreshState()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -121,7 +126,9 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Text(
-                            text = "USER",
+                            text = user?.let {
+                                "${it.firstName} ${it.lastName}"
+                            } ?: "Unknown User" ,
                             style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
@@ -147,7 +154,7 @@ fun HomeScreen(
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
 
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.SupervisorAccount, "Managers") },
@@ -168,7 +175,7 @@ fun HomeScreen(
                 Spacer(Modifier.weight(1f))
 
                 NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Logout, "Employees") },
+                    icon = { Icon(Icons.AutoMirrored.Filled.Logout, "Logout") },
                     label = { Text("Logout") },
                     selected = false,
                     onClick = {
@@ -194,7 +201,9 @@ fun HomeScreen(
                             style = MaterialTheme.typography.titleMedium
                         )
                         Text(
-                            text = "currentUser.fullName",
+                            text = user?.let {
+                                "${it.firstName} ${it.lastName}"
+                            } ?: "Unknown User",
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -212,13 +221,25 @@ fun HomeScreen(
                 }
             )
             // Main content
-            Box(
+            PullToRefreshBox(
+                state = pullRefreshState,
+                onRefresh = { viewModel.onIntent(DashboardIntents.Refresh) },
+                isRefreshing = isRefreshing,
+                indicator = {
+                    Indicator(
+                        modifier = Modifier.align(Alignment.TopCenter),
+                        isRefreshing = isRefreshing,
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        state = pullRefreshState
+                    )
+                },
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxSize()
+                    .weight(1f)
             ) {
                 DashboardContent(
-                    stats = state.adminsCount,
+                    state = state,
                     viewModel = viewModel,
                     recentTasks = listOf(
                         TaskItem(
@@ -248,7 +269,7 @@ fun HomeScreen(
                     icon = { Icon(Icons.Default.Business, "Departments") },
                     label = { Text("Departments") },
                     selected = false,
-                    onClick = { /* Handle departments navigation */ }
+                    onClick = { navController.navigate(Screens.AppScreens.Departments.route)}
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Task, "Tasks") },
@@ -257,21 +278,11 @@ fun HomeScreen(
                     onClick = { /* Handle tasks navigation */ }
                 )
             }
-
         }
     }
 }
 
-// First, let's create a data class for our statistics
-data class DashboardStats(
-    val adminCount: Int,
-    val managerCount: Int,
-    val employeeCount: Int,
-    val taskCount: Int,
-    val departmentCount: Int
-)
 
-// And one for our task items
 data class TaskItem(
     val title: String,
     val assignee: String,
@@ -282,7 +293,7 @@ data class TaskItem(
 @Composable
 fun DashboardContent(
     modifier: Modifier = Modifier,
-    stats: Int,
+    state: DashboardState,
     viewModel: DashboardViewModel,
     recentTasks: List<TaskItem>
 ) {
@@ -306,7 +317,7 @@ fun DashboardContent(
                     StatisticCard(
                         icon = Icons.Default.AdminPanelSettings,
                         title = "Admins",
-                        count = stats,
+                        count = state.adminsCount,
                         backgroundColor = MaterialTheme.colorScheme.primaryContainer,
                         viewModel = viewModel
                     )
@@ -317,7 +328,7 @@ fun DashboardContent(
                     StatisticCard(
                         icon = Icons.Default.SupervisorAccount,
                         title = "Managers",
-                        count = 0,
+                        count = state.managersCount,
                         backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
                         viewModel = viewModel
                     )
@@ -328,7 +339,7 @@ fun DashboardContent(
                     StatisticCard(
                         icon = Icons.Default.Group,
                         title = "Employees",
-                        count = 0,
+                        count = state.employeesCount,
                         backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
                         viewModel = viewModel
                     )
@@ -339,7 +350,7 @@ fun DashboardContent(
                     StatisticCard(
                         icon = Icons.Default.Task,
                         title = "Tasks",
-                        count = 9,
+                        count = state.tasksCount,
                         backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
                         viewModel = viewModel
                     )
@@ -350,7 +361,7 @@ fun DashboardContent(
                     StatisticCard(
                         icon = Icons.Default.Business,
                         title = "Departments",
-                        count = 9,
+                        count = state.departmentsCount,
                         backgroundColor = MaterialTheme.colorScheme.errorContainer,
                         viewModel = viewModel
                     )

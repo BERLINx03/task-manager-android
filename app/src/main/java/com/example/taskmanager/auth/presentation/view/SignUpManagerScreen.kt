@@ -54,14 +54,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.taskmanager.auth.data.remote.requestmodels.VerificationRequestDto
-import com.example.taskmanager.auth.presentation.event.SignUpEmployeeUiEvent
 import com.example.taskmanager.auth.presentation.event.SignUpManagerUiEvent
-import com.example.taskmanager.auth.presentation.state.EmployeeSignupUiState
 import com.example.taskmanager.auth.presentation.state.ManagerSignupUiState
-import com.example.taskmanager.auth.presentation.viewmodel.SignUpEmployeeViewModel
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpManagerViewModel
-import com.example.taskmanager.auth.utils.Screens
+import com.example.taskmanager.core.utils.Screens
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

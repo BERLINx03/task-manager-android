@@ -49,7 +49,7 @@ import com.example.taskmanager.auth.data.remote.requestmodels.ResetPasswordReque
 import com.example.taskmanager.auth.presentation.event.LoginUiEvent
 import com.example.taskmanager.auth.presentation.view.toForgotPasswordRequest
 import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
-import com.example.taskmanager.auth.utils.Screens
+import com.example.taskmanager.core.utils.Screens
 import kotlinx.coroutines.delay
 
 /**

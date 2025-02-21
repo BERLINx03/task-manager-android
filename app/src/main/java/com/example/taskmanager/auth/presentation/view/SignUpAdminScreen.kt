@@ -56,7 +56,7 @@ import androidx.navigation.NavController
 import com.example.taskmanager.auth.presentation.event.SignUpAdminUiEvent
 import com.example.taskmanager.auth.presentation.state.AdminSignupUiState
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpAdminViewModel
-import com.example.taskmanager.auth.utils.Screens
+import com.example.taskmanager.core.utils.Screens
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

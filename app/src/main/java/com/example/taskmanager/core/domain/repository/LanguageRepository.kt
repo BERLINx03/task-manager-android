@@ -1,6 +1,6 @@
 package com.example.taskmanager.core.domain.repository
 
-import com.example.taskmanager.core.domain.domain.Language
+import com.example.taskmanager.core.domain.model.Language
 import kotlinx.coroutines.flow.Flow
 
 /**

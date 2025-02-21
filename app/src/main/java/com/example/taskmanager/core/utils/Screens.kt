@@ -1,4 +1,4 @@
-package com.example.taskmanager.auth.utils
+package com.example.taskmanager.core.utils
 
 /**
  * @author Abdallah Elsokkary
@@ -29,6 +29,7 @@ sealed class Screens(val route: String) {
 
     sealed class AppScreens(route: String) : Screens(route) {
         data object Dashboard : AppScreens("dashboard")
+        data object Departments : AppScreens("departments")
         data object Profile : AppScreens("profile")
         data object Tasks : AppScreens("tasks")
     }

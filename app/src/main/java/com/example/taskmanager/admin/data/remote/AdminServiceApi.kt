@@ -40,18 +40,14 @@ interface AdminServiceApi {
         @Body title: String
     ): ResponseDto<ResponseDto.DepartmentResponse>
 
-    @GET("/Department")
-    suspend fun getDepartments(
+
+    @GET("/Tasks")
+    suspend fun getTasks(
         @Query("Page") page: Int,
         @Query("Limit") limit: Int,
         @Query("Category") search: String? = null,
         @Query("Sort") sort: String? = null
-    ): ResponseDto<ResponseDto.PaginatedResponse<ResponseDto.DepartmentResponse>>
-
-    @GET("/Department/{DepartmentId}")
-    suspend fun getDepartmentById(
-        @Path("DepartmentId") departmentId: UUID
-    ): ResponseDto<ResponseDto.DepartmentResponse>
+    ): ResponseDto<ResponseDto.PaginatedResponse<ResponseDto.TaskResponse>>
 
     @PUT("/Department/{DepartmentId}")
     suspend fun updateDepartment(
@@ -64,52 +60,5 @@ interface AdminServiceApi {
         @Path("DepartmentId") departmentId: UUID
     ): ResponseDto<String>
 
-    @GET("/Department/{DepartmentId}/Employees")
-    suspend fun getDepartmentEmployees(
-        @Path("DepartmentId") departmentId: UUID,
-        @Query("Page") page: Int,
-        @Query("Limit") limit: Int,
-        @Query("Category") search: String? = null,
-        @Query("Sort") sort: String? = null
-    ): ResponseDto<ResponseDto.PaginatedResponse<ResponseDto.ManagerAndEmployeeResponse>>
 
-    @GET("/Department/{DepartmentId}/Managers")
-    suspend fun getDepartmentManagers(
-        @Path("DepartmentId") departmentId: UUID,
-        @Query("Page") page: Int,
-        @Query("Limit") limit: Int,
-        @Query("Category") search: String? = null,
-        @Query("Sort") sort: String? = null
-    ): ResponseDto<ResponseDto.PaginatedResponse<ResponseDto.ManagerAndEmployeeResponse>>
-
-    @GET("/Tasks")
-    suspend fun getAllTask(
-        @Query("Page") page: Int,
-        @Query("Limit") limit: Int,
-        @Query("Category") search: String? = null,
-        @Query("Sort") sort: String? = null
-    ): ResponseDto<ResponseDto.PaginatedResponse<ResponseDto.TaskResponse>>
-
-    @GET("/Tasks/{taskId}")
-    suspend fun getTaskById(
-        @Path("taskId") taskId: UUID
-    ): ResponseDto<ResponseDto.TaskResponse>
-
-    @GET("/Tasks/Employee/{employeeId}")
-    suspend fun getEmployeeTasks(
-        @Path("employeeId") employeeId: UUID,
-        @Query("Page") page: Int,
-        @Query("Limit") limit: Int,
-        @Query("Category") search: String? = null,
-        @Query("Sort") sort: String? = null
-    ): ResponseDto<ResponseDto.PaginatedResponse<ResponseDto.TaskResponse>>
-
-    @GET("/Tasks/Manager/{managerId}")
-    suspend fun getManagerTasks(
-        @Path("managerId") managerId: UUID,
-        @Query("Page") page: Int,
-        @Query("Limit") limit: Int,
-        @Query("Category") search: String? = null,
-        @Query("Sort") sort: String? = null
-    ): ResponseDto<ResponseDto.PaginatedResponse<ResponseDto.TaskResponse>>
 }

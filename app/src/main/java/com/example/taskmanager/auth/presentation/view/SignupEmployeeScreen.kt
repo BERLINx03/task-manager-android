@@ -58,7 +58,7 @@ import com.example.taskmanager.auth.data.remote.requestmodels.VerificationReques
 import com.example.taskmanager.auth.presentation.event.SignUpEmployeeUiEvent
 import com.example.taskmanager.auth.presentation.state.EmployeeSignupUiState
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpEmployeeViewModel
-import com.example.taskmanager.auth.utils.Screens
+import com.example.taskmanager.core.utils.Screens
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

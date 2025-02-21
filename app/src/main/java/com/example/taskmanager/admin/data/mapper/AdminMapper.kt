@@ -3,9 +3,9 @@ package com.example.taskmanager.admin.data.mapper
 import androidx.room.TypeConverter
 import com.example.taskmanager.core.data.local.entities.AdminEntity
 import com.example.taskmanager.admin.domain.model.Admin
-import com.example.taskmanager.admin.domain.model.Department
-import com.example.taskmanager.admin.domain.model.ManagerAndEmployee
-import com.example.taskmanager.admin.domain.model.PaginatedData
+import com.example.taskmanager.core.domain.model.Department
+import com.example.taskmanager.core.domain.model.ManagerAndEmployee
+import com.example.taskmanager.core.domain.model.PaginatedData
 import com.example.taskmanager.auth.data.remote.reponsemodels.ResponseDto
 import java.util.UUID
 import javax.inject.Inject

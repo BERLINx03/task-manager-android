@@ -1,4 +1,4 @@
-package com.example.taskmanager.admin.domain.model
+package com.example.taskmanager.core.domain.model
 
 data class PaginatedData<T>(
     val items: List<T>,

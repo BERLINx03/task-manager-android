@@ -21,7 +21,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object NetworkModule {
+object NeetworkModule {
     private const val BASE_URL = "https://10.0.2.2:7176"
 
     @Provides
@@ -91,11 +91,26 @@ object NetworkModule {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
+
+    @Provides
+    @Singleton
+    @SharedRetrofit
+    fun provideSharedRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
 }
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class AuthRetrofit
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class SharedRetrofit
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)

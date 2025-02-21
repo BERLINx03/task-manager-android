@@ -1,8 +1,10 @@
 package com.example.taskmanager.auth.presentation.viewmodel
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.taskmanager.admin.domain.model.Admin
+import com.example.taskmanager.admin.domain.repository.AdminRepository
 import com.example.taskmanager.auth.data.local.TokenDataStore
 import com.example.taskmanager.auth.data.remote.requestmodels.ForgotPasswordRequestDto
 import com.example.taskmanager.auth.data.remote.requestmodels.LoginRequest
@@ -11,7 +13,10 @@ import com.example.taskmanager.auth.domain.repository.AuthRepository
 import com.example.taskmanager.auth.presentation.event.LoginUiEvent
 import com.example.taskmanager.auth.presentation.state.LoginUiState
 import com.example.taskmanager.auth.utils.AuthResult
-import com.example.taskmanager.auth.utils.Screens
+import com.example.taskmanager.core.utils.Screens
+import com.example.taskmanager.core.data.local.datastore.UserInfoDataStore
+import com.example.taskmanager.core.domain.model.User
+import com.example.taskmanager.core.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -29,7 +34,9 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val repository: AuthRepository,
-    private val tokenDataStore: TokenDataStore
+    private val adminRepository: AdminRepository,
+    private val tokenDataStore: TokenDataStore,
+    private val userInfoDataStore: UserInfoDataStore
 ) : ViewModel() {
 
     private val _loginState = MutableStateFlow(LoginUiState())
@@ -38,8 +45,9 @@ class LoginViewModel @Inject constructor(
     private val _navigationEvent = MutableSharedFlow<String>()
     val navigationEvent = _navigationEvent.asSharedFlow()
 
-    private val _isCheckingAuth = MutableStateFlow(true)
-    val isCheckingAuth= _isCheckingAuth.asStateFlow()
+    var isCheckingAuth = mutableStateOf(true)
+        private set
+
     init {
         viewModelScope.launch {
             val authState = tokenDataStore.authState.firstOrNull() ?: false
@@ -55,6 +63,11 @@ class LoginViewModel @Inject constructor(
                 when (role) {
                     "Admin" -> {
                         _navigationEvent.emit(Screens.AppScreens.Dashboard.route)
+                        val admin = adminRepository.getCurrentAdmin()
+                        if (admin is Resource.Success) {
+                            userInfoDataStore.saveUserInfo(admin.data.toUser())
+                        }
+
                     }
 
                     "Manager" -> {
@@ -70,7 +83,7 @@ class LoginViewModel @Inject constructor(
             }
 
             delay(400)
-            _isCheckingAuth.update { false }
+            isCheckingAuth.value = false
         }
     }
 
@@ -331,4 +344,15 @@ class LoginViewModel @Inject constructor(
             tokenDataStore.saveUserRole("")
         }
     }
+}
+
+fun Admin.toUser(): User{
+    return User(
+        id = id,
+        firstName = firstName,
+        lastName = lastName,
+        birthDate = birthDate,
+        phoneNumber = phoneNumber,
+        gender = gender
+    )
 }

@@ -11,8 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import com.example.taskmanager.admin.presentation.view.HomeScreen
-import com.example.taskmanager.admin.presentation.viewmodel.DashboardViewModel
+import com.example.taskmanager.core.presentation.view.HomeScreen
+import com.example.taskmanager.core.presentation.viewmodel.DashboardViewModel
 import com.example.taskmanager.auth.presentation.view.LoginScreen
 import com.example.taskmanager.auth.presentation.view.RoleSelectionScreen
 import com.example.taskmanager.auth.presentation.view.SignUpAdminScreen
@@ -26,12 +26,12 @@ import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpAdminViewModel
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpEmployeeViewModel
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpManagerViewModel
-import com.example.taskmanager.auth.utils.Screens
+import com.example.taskmanager.core.presentation.view.DepartmentsScreen
+import com.example.taskmanager.core.presentation.viewmodel.DepartmentsViewModel
+import com.example.taskmanager.core.utils.Screens
 import com.example.taskmanager.core.ui.theme.TaskManagerTheme
-import com.example.taskmanager.core.utils.SplashScreen
 import com.example.taskmanager.core.utils.animatedComposable
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.delay
 
 @AndroidEntryPoint
 class TaskManagerActivity : ComponentActivity() {
@@ -40,6 +40,7 @@ class TaskManagerActivity : ComponentActivity() {
     private val signUpManagerViewModel: SignUpManagerViewModel by viewModels()
     private val signUpAdminViewModel: SignUpAdminViewModel by viewModels()
     private val dashboardViewModel: DashboardViewModel by viewModels()
+    private val departmentViewModel: DepartmentsViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -150,6 +151,12 @@ class TaskManagerActivity : ComponentActivity() {
                                 navController = navController,
                                 innerPadding = innerPadding
                             )
+                        }
+
+                        animatedComposable(Screens.AppScreens.Departments.route){
+                            DepartmentsScreen(departmentViewModel) {
+
+                            }
                         }
                     }
                 }

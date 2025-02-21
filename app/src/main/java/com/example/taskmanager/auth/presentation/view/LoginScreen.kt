@@ -30,7 +30,7 @@ import com.example.taskmanager.R
 import com.example.taskmanager.auth.data.remote.requestmodels.ForgotPasswordRequestDto
 import com.example.taskmanager.auth.presentation.event.LoginUiEvent
 import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
-import com.example.taskmanager.auth.utils.Screens
+import com.example.taskmanager.core.utils.Screens
 import com.example.taskmanager.core.presentation.viewmodel.LanguageViewModel
 
 @Composable

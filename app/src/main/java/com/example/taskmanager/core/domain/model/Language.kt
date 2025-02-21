@@ -1,4 +1,4 @@
-package com.example.taskmanager.core.domain.domain
+package com.example.taskmanager.core.domain.model
 
 data class Language(
     val code: String,

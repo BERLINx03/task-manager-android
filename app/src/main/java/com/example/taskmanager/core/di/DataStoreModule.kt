@@ -2,7 +2,9 @@ package com.example.taskmanager.core.di
 
 import android.content.Context
 import com.example.taskmanager.auth.data.local.TokenDataStore
-import com.example.taskmanager.core.data.local.LanguageDataStore
+import com.example.taskmanager.core.data.local.datastore.LanguageDataStore
+import com.example.taskmanager.core.data.local.datastore.StatisticsDataStore
+import com.example.taskmanager.core.data.local.datastore.UserInfoDataStore
 import com.example.taskmanager.core.data.local.repository.LanguageRepositoryImpl
 import com.example.taskmanager.core.domain.repository.LanguageRepository
 import dagger.Module
@@ -31,11 +33,22 @@ object DataStoreModule {
         return LanguageRepositoryImpl(languageDataStore, context)
     }
 
-
     @Provides
     @Singleton
     fun provideTokenDataStore(@ApplicationContext context: Context): TokenDataStore {
         return TokenDataStore(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideStatisticsDataStore(@ApplicationContext context: Context): StatisticsDataStore {
+        return StatisticsDataStore(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserInfoDataStore(@ApplicationContext context: Context): UserInfoDataStore {
+        return UserInfoDataStore(context)
     }
 
 }

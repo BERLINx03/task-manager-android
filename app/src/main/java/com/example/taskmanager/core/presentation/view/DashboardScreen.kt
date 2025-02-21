@@ -1,34 +1,25 @@
 package com.example.taskmanager.core.presentation.view
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AdminPanelSettings
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SupervisorAccount
 import androidx.compose.material.icons.filled.Task
 import androidx.compose.material3.AssistChip
@@ -37,16 +28,11 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationDrawerItem
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -63,11 +49,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
 import com.example.taskmanager.core.presentation.intents.DashboardIntents
 import com.example.taskmanager.core.presentation.state.DashboardState
 import com.example.taskmanager.core.presentation.viewmodel.DashboardViewModel
-import com.example.taskmanager.auth.presentation.event.LoginUiEvent
-import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
+import com.example.taskmanager.core.utils.NavigationDrawer
 import com.example.taskmanager.core.utils.Screens
 import kotlinx.coroutines.launch
 
@@ -76,13 +62,12 @@ import kotlinx.coroutines.launch
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
+fun DashboardScreen(
     viewModel: DashboardViewModel,
     loginViewModel: LoginViewModel,
     navController: NavController,
     innerPadding: PaddingValues
 ) {
-    // State for managing the navigation drawer
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -91,103 +76,11 @@ fun HomeScreen(
     val isRefreshing = state.isRefreshing
     val pullRefreshState = rememberPullToRefreshState()
 
-    ModalNavigationDrawer(
+    NavigationDrawer(
         drawerState = drawerState,
-        drawerContent = {
-            ModalDrawerSheet {
-                // Profile Section
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        // Profile Image
-                        Surface(
-                            modifier = Modifier.size(80.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Profile",
-                                modifier = Modifier.padding(16.dp),
-                                tint = MaterialTheme.colorScheme.onPrimary
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text(
-                            text = user?.let {
-                                "${it.firstName} ${it.lastName}"
-                            } ?: "Unknown User" ,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Navigation Items
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Settings, "Profile Settings") },
-                    label = { Text("Profile Settings") },
-                    selected = false,
-                    onClick = { /* Handle profile settings navigation */ },
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Build, "App Settings") },
-                    label = { Text("App Settings") },
-                    selected = false,
-                    onClick = { /* Handle app settings navigation */ },
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.SupervisorAccount, "Managers") },
-                    label = { Text("Managers") },
-                    selected = false,
-                    onClick = { /* Handle managers navigation */ },
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Group, "Employees") },
-                    label = { Text("Employees") },
-                    selected = false,
-                    onClick = { /* Handle employees navigation */ },
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-
-                Spacer(Modifier.weight(1f))
-
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.AutoMirrored.Filled.Logout, "Logout") },
-                    label = { Text("Logout") },
-                    selected = false,
-                    onClick = {
-                        loginViewModel.onEvent(LoginUiEvent.Logout)
-                        navController.navigate(Screens.AuthScreens.Login.route)
-                    },
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-
-                Spacer(Modifier.height(16.dp))
-            }
-        }
+        user = user,
+        loginViewModel = loginViewModel,
+        navController = navController
     ) {
         Column(
             modifier = Modifier

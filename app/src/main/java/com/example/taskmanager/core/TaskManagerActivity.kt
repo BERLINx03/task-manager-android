@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import com.example.taskmanager.core.presentation.view.HomeScreen
+import com.example.taskmanager.core.presentation.view.DashboardScreen
 import com.example.taskmanager.core.presentation.viewmodel.DashboardViewModel
 import com.example.taskmanager.auth.presentation.view.LoginScreen
 import com.example.taskmanager.auth.presentation.view.RoleSelectionScreen
@@ -145,7 +145,7 @@ class TaskManagerActivity : ComponentActivity() {
                         }
 
                         animatedComposable(Screens.AppScreens.Dashboard.route) {
-                            HomeScreen(
+                            DashboardScreen(
                                 viewModel = dashboardViewModel,
                                 loginViewModel = loginViewModel,
                                 navController = navController,
@@ -154,7 +154,12 @@ class TaskManagerActivity : ComponentActivity() {
                         }
 
                         animatedComposable(Screens.AppScreens.Departments.route){
-                            DepartmentsScreen(departmentViewModel) {
+                            DepartmentsScreen(
+                                departmentsViewModel = departmentViewModel,
+                                loginViewModel = loginViewModel,
+                                navController = navController,
+                                innerPadding = innerPadding,
+                            ){
 
                             }
                         }

@@ -15,6 +15,8 @@ import com.example.taskmanager.core.data.local.dao.AdminDao
 import com.example.taskmanager.core.data.local.dao.DepartmentDao
 import com.example.taskmanager.core.data.local.dao.TaskDao
 import com.example.taskmanager.core.data.local.datastore.StatisticsDataStore
+import com.example.taskmanager.core.data.mappers.toDepartment
+import com.example.taskmanager.core.data.mappers.toDepartmentEntity
 import com.example.taskmanager.core.data.mappers.toTask
 import com.example.taskmanager.core.data.mappers.toTaskEntity
 import com.example.taskmanager.core.data.remote.SharedApiService
@@ -224,12 +226,6 @@ class AdminRepositoryImpl @Inject constructor(
 
             try {
 
-                val localAdminsFlow = adminDao.getPagedAdmins(page, limit, search, sort)
-                    .combine(adminDao.getAdminsCountFlow(search)) { admins, count ->
-                        Pair(admins, count)
-                    }
-
-
                 if (forceFetchFromRemote || isRefreshing) {
                     if (!networkUtils.isNetworkAvailable()) {
                         emit(Resource.Error("No internet connection. Using cached data."))
@@ -247,9 +243,7 @@ class AdminRepositoryImpl @Inject constructor(
                                 val remoteData = response.data.items.map {
                                     mapper.mapToDomain(it).toEntity()
                                 }
-                                remoteData.forEach { adminEntity ->
-                                    adminDao.upsertAdmin(adminEntity)
-                                }
+                                adminDao.upsertAdmins(remoteData)
                             }
                         } catch (e: IOException) {
                             emit(Resource.Error("Network error: ${e.message}. Using cached data."))
@@ -259,7 +253,10 @@ class AdminRepositoryImpl @Inject constructor(
                     }
                 }
 
-                localAdminsFlow.collect { (admins, count) ->
+                adminDao.getPagedAdmins(page, limit, search, sort)
+                    .combine(adminDao.getAdminsCountFlow(search)) { admins, count ->
+                        Pair(admins, count)
+                    }.collect { (admins, count) ->
                     emit(
                         Resource.Success(
                             ResponseDto(
@@ -330,7 +327,7 @@ class AdminRepositoryImpl @Inject constructor(
         TODO("Not yet implemented")
     }
 
-    override suspend fun getCachedAdminsCount():Resource<Int> {
+    override suspend fun getCachedAdminsCount(): Resource<Int> {
         try {
             val count = statisticsDataStore.adminCountFlow.first()
             return Resource.Success(count)
@@ -347,12 +344,13 @@ class AdminRepositoryImpl @Inject constructor(
         }
 
         try {
-            val adminsCountResponse = adminServiceApi.getAdmins(1,1).data?.totalCount
+            val adminsCountResponse = adminServiceApi.getAdmins(1, 1).data?.totalCount
 
             when {
                 adminsCountResponse == null ->
                     emit(Resource.Error("Failed to get admin count"))
-                else ->{
+
+                else -> {
                     statisticsDataStore.saveAdminCount(adminsCountResponse)
                     emit(Resource.Success(adminsCountResponse))
                 }
@@ -365,8 +363,7 @@ class AdminRepositoryImpl @Inject constructor(
             emit(Resource.Error("Unknown error: ${e.message}"))
         }
     }
-
-    override suspend fun getCachedDepartmentsCount():Resource<Int> {
+    override suspend fun getCachedDepartmentsCount(): Resource<Int> {
         try {
             val count = statisticsDataStore.departmentCountFlow.first()
             Timber.d("Cached department count: $count")
@@ -385,12 +382,13 @@ class AdminRepositoryImpl @Inject constructor(
         }
 
         try {
-            val departmentsCountResponse = sharedApiService.getDepartments(1,1).data?.totalCount
+            val departmentsCountResponse = sharedApiService.getDepartments(1, 1).data?.totalCount
 
             when {
                 departmentsCountResponse == null ->
                     emit(Resource.Error("Failed to get departments count"))
-                else ->{
+
+                else -> {
                     statisticsDataStore.saveDepartmentCount(departmentsCountResponse)
                     emit(Resource.Success(departmentsCountResponse))
                 }
@@ -403,8 +401,7 @@ class AdminRepositoryImpl @Inject constructor(
             emit(Resource.Error("Unknown error: ${e.message}"))
         }
     }
-
-    override suspend fun getCachedTasksCount():Resource<Int> {
+    override suspend fun getCachedTasksCount(): Resource<Int> {
         try {
             val count = statisticsDataStore.taskCountFlow.first()
             return Resource.Success(count)
@@ -421,12 +418,13 @@ class AdminRepositoryImpl @Inject constructor(
         }
 
         try {
-            val tasksCountResponse = adminServiceApi.getTasks(1,1).data?.totalCount
+            val tasksCountResponse = adminServiceApi.getTasks(1, 1).data?.totalCount
 
             when {
                 tasksCountResponse == null ->
                     emit(Resource.Error("Failed to get task count"))
-                else ->{
+
+                else -> {
                     statisticsDataStore.saveTaskCount(tasksCountResponse)
                     emit(Resource.Success(tasksCountResponse))
                 }
@@ -441,8 +439,7 @@ class AdminRepositoryImpl @Inject constructor(
             emit(Resource.Loading(false))
         }
     }
-
-    override suspend fun getCachedManagersCount():Resource<Int> {
+    override suspend fun getCachedManagersCount(): Resource<Int> {
         try {
             val count = statisticsDataStore.managerCountFlow.first()
             Timber.d("Cached manager count: $count")
@@ -461,12 +458,13 @@ class AdminRepositoryImpl @Inject constructor(
         }
 
         try {
-            val managersTotalCount = sharedApiService.getManagers(1,1).data?.totalCount
+            val managersTotalCount = sharedApiService.getManagers(1, 1).data?.totalCount
             Timber.d("$managersTotalCount manager has been fetched")
             when {
                 managersTotalCount == null ->
                     emit(Resource.Error("Failed to get managers count"))
-                else ->{
+
+                else -> {
                     statisticsDataStore.saveManagerCount(managersTotalCount)
                     Timber.d("Managers total count: $managersTotalCount")
                     emit(Resource.Success(managersTotalCount))
@@ -482,9 +480,7 @@ class AdminRepositoryImpl @Inject constructor(
             emit(Resource.Loading(false))
         }
     }
-
-
-    override suspend fun getCachedEmployeesCount():Resource<Int> {
+    override suspend fun getCachedEmployeesCount(): Resource<Int> {
         try {
             val count = statisticsDataStore.employeeCountFlow.first()
             Timber.d("Cached employee count: $count")
@@ -503,12 +499,13 @@ class AdminRepositoryImpl @Inject constructor(
         }
 
         try {
-            val employeeCount = sharedApiService.getEmployees(1,1).data?.totalCount
+            val employeeCount = sharedApiService.getEmployees(1, 1).data?.totalCount
 
             when {
                 employeeCount == null ->
                     emit(Resource.Error("Failed to get employee count"))
-                else ->{
+
+                else -> {
                     statisticsDataStore.saveEmployeeCount(employeeCount)
                     emit(Resource.Success(employeeCount))
                 }
@@ -527,11 +524,76 @@ class AdminRepositoryImpl @Inject constructor(
         page: Int,
         limit: Int,
         search: String?,
-        sort: String?
+        sort: String?,
+        forceFetchFromRemote: Boolean,
+        isRefreshing: Boolean
     ): Flow<Resource<ResponseDto<PaginatedData<Department>>>> {
         return flow {
+            emit(Resource.Loading(true))
+            try {
+                if (forceFetchFromRemote || isRefreshing) {
+                    if (!networkUtils.isNetworkAvailable()) {
+                        emit(Resource.Error("No internet connection. Using cached data."))
+                    } else {
+                        try {
+                            if (isRefreshing) {
+                                departmentDao.deleteAllDepartments()
+                            }
 
-        }
+                            val response =
+                                sharedApiService.getDepartments(page, limit, search, sort)
+
+                            if (!response.isSuccess) {
+                                emit(Resource.Error("Failed to fetch data from server: ${response.message}"))
+                            } else if (response.data != null) {
+                                val remoteData = response.data.items.map {
+                                    it.toDepartmentEntity()
+                                }
+
+                                departmentDao.upsertDepartments(remoteData)
+
+                            }
+                        } catch (e: IOException) {
+                            emit(Resource.Error("Network error: ${e.message}. Using cached data."))
+                        } catch (e: Exception) {
+                            emit(Resource.Error("Unexpected error: ${e.message}"))
+                        }
+                    }
+                }
+
+                departmentDao.getPagedDepartments(page, limit, search, sort)
+                    .combine(adminDao.getAdminsCountFlow(search)) { departments, count ->
+                        Pair(departments, count)
+                    }.collect { (departments, count) ->
+                        emit(
+                            Resource.Success(
+                                ResponseDto(
+                                    isSuccess = true,
+                                    statusCode = OK,
+                                    message = if (forceFetchFromRemote || isRefreshing)
+                                        "Updated from network" else "Loading from cache",
+                                    data = PaginatedData(
+                                        items = departments.map { it.toDepartment() },
+                                        page = page,
+                                        pageSize = limit,
+                                        totalCount = count,
+                                        hasNextPage = (page * limit) < count,
+                                        hasPreviousPage = page > 1
+                                    ),
+                                    errors = null
+                                )
+                            )
+                        )
+                    }
+            } catch (e: IOException) {
+                Timber.e(e, "Database error and network error")
+                emit(Resource.Error("Database error: ${e.message}"))
+            } catch (e: Exception) {
+                emit(Resource.Error("Unexpected error: ${e.message}"))
+            } finally {
+                emit(Resource.Loading(false))
+            }
+        }.flowOn(Dispatchers.IO)
     }
 
     override suspend fun getDepartmentById(departmentId: String): Resource<ResponseDto<Department>> {
@@ -576,7 +638,7 @@ class AdminRepositoryImpl @Inject constructor(
         sort: String?,
         forceFetchFromRemote: Boolean,
         isRefreshing: Boolean
-    ): Flow<Resource<ResponseDto<PaginatedData<Task>>>>{
+    ): Flow<Resource<ResponseDto<PaginatedData<Task>>>> {
         return flow {
             emit(Resource.Loading(true))
             try {
@@ -608,30 +670,30 @@ class AdminRepositoryImpl @Inject constructor(
                     }
                 }
 
-                 taskDao.getPagedTasks(page, limit, search, sort)
+                taskDao.getPagedTasks(page, limit, search, sort)
                     .combine(taskDao.getTasksCountFlow(search)) { tasks, count ->
                         Pair(tasks, count)
                     }.collect { (tasks, count) ->
-                    emit(
-                        Resource.Success(
-                            ResponseDto(
-                                isSuccess = true,
-                                statusCode = OK,
-                                message = if (forceFetchFromRemote || isRefreshing)
-                                    "Updated from network" else "Loading from cache",
-                                data = PaginatedData(
-                                    items = tasks.map { it.toTask() },
-                                    page = page,
-                                    pageSize = limit,
-                                    totalCount = count,
-                                    hasNextPage = (page * limit) < count,
-                                    hasPreviousPage = page > 1
-                                ),
-                                errors = null
+                        emit(
+                            Resource.Success(
+                                ResponseDto(
+                                    isSuccess = true,
+                                    statusCode = OK,
+                                    message = if (forceFetchFromRemote || isRefreshing)
+                                        "Updated from network" else "Loading from cache",
+                                    data = PaginatedData(
+                                        items = tasks.map { it.toTask() },
+                                        page = page,
+                                        pageSize = limit,
+                                        totalCount = count,
+                                        hasNextPage = (page * limit) < count,
+                                        hasPreviousPage = page > 1
+                                    ),
+                                    errors = null
+                                )
                             )
                         )
-                    )
-                }
+                    }
             } catch (e: IOException) {
                 Timber.e(e, "Database error and network error")
                 emit(Resource.Error("Database error: ${e.message}"))

@@ -1,7 +1,9 @@
 package com.example.taskmanager.core.data.mappers
 
 import com.example.taskmanager.auth.data.remote.reponsemodels.ResponseDto
+import com.example.taskmanager.core.data.local.entities.DepartmentEntity
 import com.example.taskmanager.core.data.local.entities.TaskEntity
+import com.example.taskmanager.core.domain.model.Department
 import com.example.taskmanager.core.domain.model.PaginatedData
 import com.example.taskmanager.core.domain.model.Task
 
@@ -59,5 +61,26 @@ fun TaskEntity.toTask(): Task {
         departmentId = departmentId,
         employeeId = employeeId,
         managerId = managerId
+    )
+}
+
+fun ResponseDto.DepartmentResponse.toDepartmentEntity(): DepartmentEntity{
+    return DepartmentEntity(
+        title = title,
+        id = id
+    )
+}
+
+fun ResponseDto.DepartmentResponse.toDepartment(): Department{
+    return Department(
+        title = title,
+        id = id
+    )
+}
+
+fun DepartmentEntity.toDepartment(): Department{
+    return Department(
+        title = title,
+        id = id
     )
 }

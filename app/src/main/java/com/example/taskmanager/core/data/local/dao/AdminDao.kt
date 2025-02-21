@@ -30,6 +30,9 @@ interface AdminDao {
     suspend fun getAdminById(adminId: UUID): AdminEntity?
 
     @Upsert
+    suspend fun upsertAdmins(admins: List<AdminEntity>)
+
+    @Upsert
     suspend fun upsertAdmin(admin: AdminEntity)
 
 

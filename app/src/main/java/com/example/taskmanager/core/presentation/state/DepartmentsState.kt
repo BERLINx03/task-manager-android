@@ -1,9 +1,12 @@
 package com.example.taskmanager.core.presentation.state
 
 import com.example.taskmanager.core.domain.model.Department
+import com.example.taskmanager.core.domain.model.User
 
 
 data class DepartmentsState(
+    val user: User? = null,
+    val isRefreshing: Boolean = false,
     val departments: List<Department> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,

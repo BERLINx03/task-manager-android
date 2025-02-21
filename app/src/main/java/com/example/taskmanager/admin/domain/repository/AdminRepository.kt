@@ -41,7 +41,9 @@ interface AdminRepository {
         page: Int,
         limit: Int,
         search: String?,
-        sort: String?
+        sort: String?,
+        forceFetchFromRemote: Boolean,
+        isRefreshing: Boolean
     ): Flow<Resource<ResponseDto<PaginatedData<Department>>>>
 
     suspend fun getDepartmentById(departmentId: String): Resource<ResponseDto<Department>>

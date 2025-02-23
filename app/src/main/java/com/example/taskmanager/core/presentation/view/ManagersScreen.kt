@@ -62,6 +62,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material.icons.filled.Male
+import androidx.compose.material.icons.filled.Female
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -69,28 +72,36 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
 import com.example.taskmanager.core.domain.model.Department
+import com.example.taskmanager.core.domain.model.ManagerAndEmployee
 import com.example.taskmanager.core.presentation.intents.DepartmentIntents
+import com.example.taskmanager.core.presentation.intents.ManagersIntents
+import com.example.taskmanager.core.presentation.state.DepartmentsState
 import com.example.taskmanager.core.presentation.viewmodel.DepartmentsViewModel
+import com.example.taskmanager.core.presentation.viewmodel.ManagersViewModel
 import com.example.taskmanager.core.utils.NavigationDrawer
 import com.example.taskmanager.core.utils.PermissionDialog
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
+/**
+ * @author Abdallah Elsokkary
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DepartmentsScreen(
-    departmentsViewModel: DepartmentsViewModel,
+fun ManagersScreen(
+    managersViewModel: ManagersViewModel,
     loginViewModel: LoginViewModel,
+    departmentViewModel: DepartmentsViewModel,
     navController: NavController,
     innerPadding: PaddingValues,
-    navigateToDepartmentDetail: (String) -> Unit,
+    navigateToManagerDetail: (String) -> Unit,
 ) {
-    val state by departmentsViewModel.departmentsState.collectAsStateWithLifecycle()
+    val state by managersViewModel.managersState.collectAsStateWithLifecycle()
     val user = state.user
-    val userRole = departmentsViewModel.userRole.collectAsStateWithLifecycle("").value
+    val userRole = managersViewModel.userRole.collectAsStateWithLifecycle("").value
+    val departmentState by departmentViewModel.departmentsState.collectAsStateWithLifecycle()
 
-    val showAddDialog = remember { mutableStateOf(false) }
     val showPermissionDialog = remember { mutableStateOf(false) }
-    val newDepartmentTitle = remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -101,17 +112,17 @@ fun DepartmentsScreen(
     NavigationDrawer(
         drawerState = drawerState,
         user = user,
+        managersSelected = true,
         loginViewModel = loginViewModel,
         navController = navController
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Departments",
+                        text = "Managers",
                         style = MaterialTheme.typography.titleMedium
                     )
                 },
@@ -127,12 +138,11 @@ fun DepartmentsScreen(
                     }
                 },
                 actions = {
-                    // Search field in actions area
                     OutlinedTextField(
                         value = state.searchQuery ?: "",
                         onValueChange = {
-                            departmentsViewModel.onIntent(
-                                DepartmentIntents.OnSearchQueryChange(it)
+                            managersViewModel.onIntent(
+                                ManagersIntents.OnSearchQueryChange(it)
                             )
                         },
                         modifier = Modifier
@@ -160,10 +170,9 @@ fun DepartmentsScreen(
                 }
             )
 
-            // Main content
             PullToRefreshBox(
                 state = pullRefreshState,
-                onRefresh = { departmentsViewModel.onIntent(DepartmentIntents.Refresh) },
+                onRefresh = { managersViewModel.onIntent(ManagersIntents.Refresh) },
                 isRefreshing = state.isRefreshing,
                 indicator = {
                     Indicator(
@@ -180,64 +189,21 @@ fun DepartmentsScreen(
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     Column {
-                        // Add Department Button
-                        Card(
-                            onClick = { showAddDialog.value = true },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = colorScheme.primaryContainer
-                            ),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = colorScheme.primary,
-                                    modifier = Modifier.size(36.dp),
-                                    shadowElevation = 2.dp
-                                ) {
-                                    Icon(
-                                        Icons.Default.Add,
-                                        contentDescription = "Add",
-                                        tint = colorScheme.onPrimary,
-                                        modifier = Modifier
-                                            .padding(8.dp)
-                                            .size(20.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Text(
-                                    text = "Add New Department",
-                                    color = colorScheme.onPrimaryContainer,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
-
-                        // Department list
                         LazyColumn(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
                                 .padding(horizontal = 16.dp),
-                            contentPadding = PaddingValues(bottom = 16.dp)
+                            contentPadding = PaddingValues(vertical = 16.dp)
                         ) {
-                            items(state.departments.size) { index ->
-                                val department = state.departments[index]
-                                DepartmentCard(
-                                    department = department,
+                            items(state.managers.size) { index ->
+                                val manager = state.managers[index]
+                                ManagerCard(
+                                    manager = manager,
+                                    departments = departmentState.departments,
                                     onClick = {
                                         if (userRole == "Admin") {
-                                            navigateToDepartmentDetail(department.id.toString())
+                                            navigateToManagerDetail(manager.id.toString())
                                         } else {
                                             showPermissionDialog.value = true
                                         }
@@ -245,7 +211,7 @@ fun DepartmentsScreen(
                                 )
                             }
 
-                            if (state.departments.isEmpty() && !state.isLoading && state.errorMessage == null) {
+                            if (state.managers.isEmpty() && !state.isLoading && state.errorMessage == null) {
                                 item {
                                     Column(
                                         modifier = Modifier
@@ -255,14 +221,14 @@ fun DepartmentsScreen(
                                         verticalArrangement = Arrangement.Center
                                     ) {
                                         Icon(
-                                            Icons.Default.FolderOpen,
-                                            contentDescription = "No Departments",
+                                            Icons.Default.Group,
+                                            contentDescription = "No Managers",
                                             modifier = Modifier.size(48.dp),
                                             tint = colorScheme.onBackground.copy(alpha = 0.4f)
                                         )
                                         Spacer(modifier = Modifier.height(16.dp))
                                         Text(
-                                            text = "No departments found",
+                                            text = "No managers found",
                                             color = colorScheme.onBackground.copy(alpha = 0.6f),
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Medium
@@ -272,8 +238,7 @@ fun DepartmentsScreen(
                             }
                         }
 
-                        // Pagination controls
-                        if (state.departments.isNotEmpty()) {
+                        if (state.managers.isNotEmpty()) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -283,7 +248,7 @@ fun DepartmentsScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 FilledTonalIconButton(
-                                    onClick = { departmentsViewModel.loadPreviousPage() },
+                                    onClick = { managersViewModel.onIntent(ManagersIntents.LoadPreviousPage) },
                                     enabled = state.hasPreviousPage,
                                     modifier = Modifier.size(40.dp)
                                 ) {
@@ -305,7 +270,7 @@ fun DepartmentsScreen(
                                 )
 
                                 FilledTonalIconButton(
-                                    onClick = { departmentsViewModel.loadNextPage() },
+                                    onClick = { managersViewModel.onIntent(ManagersIntents.LoadNextPage) },
                                     enabled = state.hasNextPage,
                                     modifier = Modifier.size(40.dp)
                                 ) {
@@ -321,65 +286,66 @@ fun DepartmentsScreen(
                         }
                     }
 
-                    // Error message overlay
                     state.errorMessage?.let {
                         if (it.isNotEmpty()) {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = colorScheme.errorContainer
-                                ),
-                                shape = RoundedCornerShape(12.dp)
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(20.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.8f)
+                                        .padding(16.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = colorScheme.errorContainer
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
                                 ) {
-                                    Icon(
-                                        Icons.Default.Warning,
-                                        contentDescription = "Error",
-                                        tint = colorScheme.error,
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    Text(
-                                        text = it,
-                                        color = colorScheme.onErrorContainer,
-                                        fontSize = 14.sp,
-                                        textAlign = TextAlign.Center
-                                    )
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Button(
-                                        onClick = {
-                                            departmentsViewModel.onIntent(
-                                                DepartmentIntents.LoadDepartments(true)
-                                            )
-                                        },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = colorScheme.error
-                                        ),
-                                        shape = RoundedCornerShape(20.dp)
+                                    Column(
+                                        modifier = Modifier.padding(20.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
                                     ) {
                                         Icon(
-                                            Icons.Default.Refresh,
-                                            contentDescription = "Retry",
-                                            modifier = Modifier.size(16.dp)
+                                            Icons.Default.Warning,
+                                            contentDescription = "Error",
+                                            tint = colorScheme.error,
+                                            modifier = Modifier.size(28.dp)
                                         )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Retry")
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        Text(
+                                            text = it,
+                                            color = colorScheme.onErrorContainer,
+                                            fontSize = 14.sp,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Button(
+                                            onClick = {
+                                                managersViewModel.onIntent(ManagersIntents.Refresh)
+                                            },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = colorScheme.error
+                                            ),
+                                            shape = RoundedCornerShape(20.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Refresh,
+                                                contentDescription = "Retry",
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Retry")
+                                        }
                                     }
                                 }
                             }
                         }
                     }
 
-                    // Loading indicator overlay
                     if (state.isLoading) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxSize(),
+                            modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator(
@@ -393,124 +359,22 @@ fun DepartmentsScreen(
             }
         }
 
-        // Add Department Dialog
-        if (showAddDialog.value) {
-            Dialog(onDismissRequest = { showAddDialog.value = false }) {
-                Surface(
-                    shape = RoundedCornerShape(24.dp),
-                    color = colorScheme.surface,
-                    tonalElevation = 6.dp,
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(24.dp)
-                            .fillMaxWidth()
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.AddCircle,
-                                contentDescription = null,
-                                tint = colorScheme.primary,
-                                modifier = Modifier.size(28.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = "Add New Department",
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = colorScheme.onSurface
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        OutlinedTextField(
-                            value = newDepartmentTitle.value,
-                            onValueChange = { newDepartmentTitle.value = it },
-                            label = { Text("Department Title") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = colorScheme.surface,
-                                unfocusedContainerColor = colorScheme.surface,
-                                focusedIndicatorColor = colorScheme.primary,
-                                unfocusedIndicatorColor = colorScheme.outline,
-                            ),
-                            shape = RoundedCornerShape(8.dp),
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Default.Business,
-                                    contentDescription = null,
-                                    tint = colorScheme.primary.copy(alpha = 0.8f)
-                                )
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            OutlinedButton(
-                                onClick = { showAddDialog.value = false },
-                                shape = RoundedCornerShape(20.dp),
-                                border = BorderStroke(1.dp, colorScheme.outline)
-                            ) {
-                                Text(
-                                    "Cancel",
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.width(12.dp))
-
-                            Button(
-                                onClick = {
-                                    if (newDepartmentTitle.value.isNotBlank()) {
-                                        coroutineScope.launch {
-                                            departmentsViewModel.addDepartment(newDepartmentTitle.value)
-                                            showAddDialog.value = false
-                                            newDepartmentTitle.value = ""
-                                        }
-                                    }
-                                },
-                                enabled = newDepartmentTitle.value.isNotBlank(),
-                                shape = RoundedCornerShape(20.dp),
-                                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    "Add",
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
         if (showPermissionDialog.value) {
             PermissionDialog(showPermissionDialog)
         }
     }
 }
 
-
 @Composable
-fun DepartmentCard(
-    department: Department,
+fun ManagerCard(
+    manager: ManagerAndEmployee,
+    departments: List<Department>,
     onClick: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
+
+    val managerDepartment = departments.find { it.id == manager.departmentId }
+    Timber.d("Manager: $manager Department: $managerDepartment")
 
     Card(
         onClick = onClick,
@@ -528,9 +392,7 @@ fun DepartmentCard(
                 .fillMaxWidth()
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Initial letter avatar with gradient background
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -546,37 +408,47 @@ fun DepartmentCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = department.title.take(1).uppercase(),
+                    text = "${manager.firstName.take(1)}${manager.lastName.take(1)}",
                     color = colorScheme.onPrimary,
-                    fontSize = 22.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Department name with elegant typography
-            Text(
-                text = department.title,
-                fontSize = 17.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = colorScheme.onSurface,
-                letterSpacing = 0.2.sp,
+            Column(
                 modifier = Modifier.weight(1f)
-            )
-
-            // Chevron icon with subtle animation
-            IconButton(
-                onClick = onClick,
-                modifier = Modifier.size(40.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = "View Department",
-                    tint = colorScheme.primary.copy(alpha = 0.8f),
-                    modifier = Modifier.size(24.dp)
+                Text(
+                    text = "${manager.firstName} ${manager.lastName}",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colorScheme.onSurface
+                )
+
+                Text(
+                    text = managerDepartment?.title ?: "Not found. Try reload departments",
+                    fontSize = 14.sp,
+                    color = colorScheme.onSurface.copy(alpha = 0.7f)
                 )
             }
+
+            Icon(
+                imageVector = if (manager.gender == 0) Icons.Default.Male else Icons.Default.Female,
+                contentDescription = "Gender",
+                tint = colorScheme.primary.copy(alpha = 0.8f),
+                modifier = Modifier.size(24.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = "View Details",
+                tint = colorScheme.primary.copy(alpha = 0.8f),
+                modifier = Modifier.size(24.dp)
+            )
         }
     }
 }

@@ -3,18 +3,23 @@ package com.example.taskmanager.core.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.taskmanager.admin.domain.repository.AdminRepository
+import com.example.taskmanager.auth.data.local.TokenDataStore
 import com.example.taskmanager.core.data.local.datastore.UserInfoDataStore
 import com.example.taskmanager.core.data.remote.SharedApiService
+import com.example.taskmanager.core.domain.repository.SharedRepository
 import com.example.taskmanager.core.presentation.intents.DepartmentIntents
 import com.example.taskmanager.core.presentation.state.DepartmentsState
 import com.example.taskmanager.core.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
 
 /**
@@ -23,13 +28,15 @@ import javax.inject.Inject
 @HiltViewModel
 class DepartmentsViewModel @Inject constructor(
     private val userInfoDataStore: UserInfoDataStore,
-    private val adminRepository: AdminRepository
+    userRoleDataStore: TokenDataStore,
+    private val adminRepository: AdminRepository,
+    private val sharedRepository: SharedRepository
 ) : ViewModel() {
 
     private val _departmentsState = MutableStateFlow(DepartmentsState())
     val departmentsState = _departmentsState.asStateFlow()
 
-
+    val userRole = userRoleDataStore.userRole
     private val pageSize = 10
 
     init {
@@ -59,16 +66,54 @@ class DepartmentsViewModel @Inject constructor(
             is DepartmentIntents.Navigating -> {
                 //TODO
             }
-            DepartmentIntents.LoadDepartments -> loadDepartments(forceFetchFromRemote = false)
+            is DepartmentIntents.LoadDepartments -> loadDepartments(forceFetchFromRemote = intent.forceFetchFromRemote)
             DepartmentIntents.LoadNextPage -> loadNextPage()
             DepartmentIntents.LoadPreviousPage -> loadPreviousPage()
             DepartmentIntents.Refresh -> {
-                //TODO
+                viewModelScope.launch {
+                    _departmentsState.update { it.copy(isRefreshing = true) }
+                    try {
+                        loadDepartments(forceFetchFromRemote = true)
+                        delay(300)
+                    } finally {
+                        _departmentsState.update { it.copy(isRefreshing = false) }
+                    }
+                }
             }
         }
     }
 
 
+    fun getDepartmentById(id: UUID) {
+        _departmentsState.update { it.copy(isLoading = true) }
+        viewModelScope.launch {
+            when (val result = sharedRepository.getDepartmentById(id)) {
+                is Resource.Error -> {
+                    _departmentsState.update {
+                        it.copy(
+                            errorMessage = result.message,
+                            isLoading = false
+                        )
+                    }
+                }
+                is Resource.Loading -> {
+                    _departmentsState.update { current ->
+                        current.copy(
+                            isLoading = result.isLoading
+                        )
+                    }
+                }
+                is Resource.Success -> {
+                    _departmentsState.update {
+                        it.copy(
+                            selectedDepartment = result.data,
+                            isLoading = false
+                        )
+                    }
+                }
+            }
+        }
+    }
     private fun updateSearchQuery(query: String) {
         if (_departmentsState.value.isLoading) return
         _departmentsState.update { state ->
@@ -80,7 +125,7 @@ class DepartmentsViewModel @Inject constructor(
         loadDepartments(forceFetchFromRemote = false)
     }
 
-    fun loadDepartments(forceFetchFromRemote: Boolean) {
+    private fun loadDepartments(forceFetchFromRemote: Boolean) {
         if (_departmentsState.value.isLoading) return
 
         _departmentsState.update { it.copy(isLoading = true) }
@@ -88,7 +133,7 @@ class DepartmentsViewModel @Inject constructor(
         viewModelScope.launch {
             val currentState = _departmentsState.value
             try {
-                val response = adminRepository.getDepartments(
+                adminRepository.getDepartments(
                     page = 1,
                     limit = pageSize,
                     search = currentState.searchQuery,
@@ -148,7 +193,7 @@ class DepartmentsViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val response = adminRepository.getDepartments(
+                adminRepository.getDepartments(
                     page = _departmentsState.value.currentPage + 1,
                     limit = pageSize,
                     search = _departmentsState.value.searchQuery,
@@ -183,6 +228,13 @@ class DepartmentsViewModel @Inject constructor(
                                         hasNextPage = departments.hasNextPage,
                                         hasPreviousPage = departments.hasPreviousPage,
                                         errorMessage = null,
+                                        isLoading = false
+                                    )
+                                }
+                            } else {
+                                _departmentsState.update {
+                                    it.copy(
+                                        errorMessage = "No departments found",
                                         isLoading = false
                                     )
                                 }
@@ -268,7 +320,7 @@ class DepartmentsViewModel @Inject constructor(
     }
 
     fun addDepartment(title: String) {
-
+        //TODO
     }
 
     private fun calculateTotalPages(totalCount: Int, pageSize: Int): Int {

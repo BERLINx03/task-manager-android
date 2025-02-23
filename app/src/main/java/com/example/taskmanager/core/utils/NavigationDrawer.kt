@@ -14,10 +14,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SupervisorAccount
+import androidx.compose.material.icons.filled.Task
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -43,6 +46,13 @@ import com.example.taskmanager.core.domain.model.User
 fun NavigationDrawer(
     drawerState: DrawerState,
     user: User?,
+    homeSelected: Boolean = false,
+    managersSelected: Boolean = false,
+    employeesSelected: Boolean = false,
+    departmentsSelected: Boolean = false,
+    tasksSelected: Boolean = false,
+    profileSettingsSelected: Boolean = false,
+    appSettingsSelected: Boolean = false,
     loginViewModel: LoginViewModel,
     navController: NavController,
     content: @Composable () -> Unit
@@ -95,7 +105,7 @@ fun NavigationDrawer(
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Settings, "Profile Settings") },
                     label = { Text("Profile Settings") },
-                    selected = false,
+                    selected = profileSettingsSelected,
                     onClick = { /* Handle profile settings navigation */ },
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
@@ -103,26 +113,51 @@ fun NavigationDrawer(
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Build, "App Settings") },
                     label = { Text("App Settings") },
-                    selected = false,
+                    selected = appSettingsSelected,
                     onClick = { /* Handle app settings navigation */ },
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
+
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Home, "Home") },
+                    label = { Text("Home") },
+                    selected = homeSelected,
+                    onClick = { navController.navigate(Screens.AppScreens.Dashboard.route) },
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.SupervisorAccount, "Managers") },
                     label = { Text("Managers") },
-                    selected = false,
-                    onClick = { /* Handle managers navigation */ },
+                    selected = managersSelected,
+                    onClick = { navController.navigate(Screens.AppScreens.Managers.route) },
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Group, "Employees") },
                     label = { Text("Employees") },
-                    selected = false,
+                    selected = employeesSelected,
                     onClick = { /* Handle employees navigation */ },
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Business, "Departments") },
+                    label = { Text("Departments") },
+                    selected = departmentsSelected,
+                    onClick = { navController.navigate(Screens.AppScreens.Departments.route) },
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Task, "Tasks") },
+                    label = { Text("Tasks") },
+                    selected = tasksSelected,
+                    onClick = { navController.navigate(Screens.AppScreens.Tasks.route) },
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
 

@@ -12,6 +12,10 @@ import com.example.taskmanager.core.data.local.entities.AdminEntity
 import com.example.taskmanager.core.data.local.entities.DepartmentEntity
 import com.example.taskmanager.core.data.local.entities.TaskEntity
 import com.example.taskmanager.admin.data.mapper.UUIDConverter
+import com.example.taskmanager.core.data.local.dao.EmployeeDao
+import com.example.taskmanager.core.data.local.dao.ManagerDao
+import com.example.taskmanager.core.data.local.entities.EmployeeEntity
+import com.example.taskmanager.core.data.local.entities.ManagerEntity
 
 /**
  * @author Abdallah Elsokkary
@@ -19,15 +23,19 @@ import com.example.taskmanager.admin.data.mapper.UUIDConverter
 @Database(
     entities = [
         AdminEntity::class,
+        ManagerEntity::class,
+        EmployeeEntity::class,
         DepartmentEntity::class,
-        TaskEntity::class
+        TaskEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(UUIDConverter::class)
-abstract class TaskManagerDatabase: RoomDatabase() {
+abstract class TaskManagerDatabase : RoomDatabase() {
     abstract val adminDao: AdminDao
+    abstract val managerDao: ManagerDao
+    abstract val employeeDao: EmployeeDao
     abstract val departmentDao: DepartmentDao
     abstract val taskDao: TaskDao
 
@@ -41,7 +49,9 @@ abstract class TaskManagerDatabase: RoomDatabase() {
                     context.applicationContext,
                     TaskManagerDatabase::class.java,
                     "task_manager_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }

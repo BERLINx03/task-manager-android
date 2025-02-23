@@ -223,10 +223,7 @@ fun LoginScreen(
 
             // Login Button
             Button(
-                onClick = { onLoginClick(LoginUiEvent.Login(state.value.loginRequest))
-                          if (state.value.role == "Admin")
-                              navController.navigate(Screens.AppScreens.Dashboard.route)
-                          },
+                onClick = { onLoginClick(LoginUiEvent.Login(state.value.loginRequest))},
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),

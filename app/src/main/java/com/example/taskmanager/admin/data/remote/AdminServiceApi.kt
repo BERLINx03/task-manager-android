@@ -35,6 +35,11 @@ interface AdminServiceApi {
         @Body admin: UpdateAdminRequestDto
     ) : ResponseDto<UUID>
 
+    @DELETE("/Managers/{managerId}")
+    suspend fun deleteManager(
+        @Path("managerId") managerId: UUID
+    ): ResponseDto<String>
+
     @POST("/Department")
     suspend fun createDepartment(
         @Body title: String

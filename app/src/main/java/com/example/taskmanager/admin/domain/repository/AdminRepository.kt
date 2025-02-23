@@ -35,6 +35,7 @@ interface AdminRepository {
     suspend fun updateAdmin(admin: UpdateAdminRequestDto): Resource<String>
 
 
+    suspend fun deleteManager(managerId: UUID): Resource<String>
     suspend fun createDepartment(title: String): Resource<ResponseDto<Department>>
 
     suspend fun getDepartments(

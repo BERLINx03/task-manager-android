@@ -1,7 +1,7 @@
 package com.example.taskmanager.core.presentation.intents
 
 sealed class DepartmentIntents{
-    data object LoadDepartments: DepartmentIntents()
+    data class LoadDepartments(val forceFetchFromRemote: Boolean): DepartmentIntents()
     data object LoadNextPage: DepartmentIntents()
     data object LoadPreviousPage: DepartmentIntents()
     data class OnSearchQueryChange(val query: String): DepartmentIntents()

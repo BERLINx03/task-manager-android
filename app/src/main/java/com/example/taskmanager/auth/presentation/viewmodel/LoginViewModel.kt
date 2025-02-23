@@ -13,11 +13,14 @@ import com.example.taskmanager.auth.domain.repository.AuthRepository
 import com.example.taskmanager.auth.presentation.event.LoginUiEvent
 import com.example.taskmanager.auth.presentation.state.LoginUiState
 import com.example.taskmanager.auth.utils.AuthResult
+import com.example.taskmanager.core.data.local.database.TaskManagerDatabase
+import com.example.taskmanager.core.data.local.datastore.StatisticsDataStore
 import com.example.taskmanager.core.utils.Screens
 import com.example.taskmanager.core.data.local.datastore.UserInfoDataStore
 import com.example.taskmanager.core.domain.model.User
 import com.example.taskmanager.core.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +29,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -36,7 +40,9 @@ class LoginViewModel @Inject constructor(
     private val repository: AuthRepository,
     private val adminRepository: AdminRepository,
     private val tokenDataStore: TokenDataStore,
-    private val userInfoDataStore: UserInfoDataStore
+    private val userInfoDataStore: UserInfoDataStore,
+    private val taskManagerDatabase: TaskManagerDatabase,
+    private val statisticsDataStore: StatisticsDataStore
 ) : ViewModel() {
 
     private val _loginState = MutableStateFlow(LoginUiState())
@@ -65,7 +71,10 @@ class LoginViewModel @Inject constructor(
                         _navigationEvent.emit(Screens.AppScreens.Dashboard.route)
                         val admin = adminRepository.getCurrentAdmin()
                         if (admin is Resource.Success) {
+                            Timber.i("${admin.data.firstName} has been added to datastore")
                             userInfoDataStore.saveUserInfo(admin.data.toUser())
+                        }else if (admin is Resource.Error){
+                            Timber.e("admin data didn't get saved")
                         }
 
                     }
@@ -278,8 +287,6 @@ class LoginViewModel @Inject constructor(
 
             when (val result = repository.loginUser(loginRequest)) {
                 is AuthResult.Authenticated -> {
-                    tokenDataStore.saveAuthState(true)
-                    tokenDataStore.saveUserRole(result.data?.data?.role ?: "")
                     _loginState.update {
                         it.copy(
                             isLoading = false,
@@ -289,16 +296,15 @@ class LoginViewModel @Inject constructor(
                         )
                     }
 
-                    if (result.data?.data?.role == "Admin") {
-                        _navigationEvent.emit(Screens.AppScreens.Dashboard.route)
-                    } else if (result.data?.data?.role == "Manager") {
-                        //TODO
-                    } else if (result.data?.data?.role == "Employee") {
-                        //TODO
+                    when (result.data?.data?.role) {
+                        "Admin" -> _navigationEvent.emit(Screens.AppScreens.Dashboard.route)
+                        "Manager" -> { }//TODO
+                        "Employee" -> {}//TODO
                     }
                 }
 
                 is AuthResult.UnAuthenticated -> {
+                    Timber.d("UnAuthenticated" + result.message)
                     _loginState.update {
                         it.copy(
                             isLoading = false,
@@ -309,6 +315,7 @@ class LoginViewModel @Inject constructor(
                 }
 
                 is AuthResult.UnknownError -> {
+                    Timber.d("Unknown Error" + result.message)
                     _loginState.update {
                         it.copy(
                             isLoading = false,
@@ -338,7 +345,10 @@ class LoginViewModel @Inject constructor(
                 isAuthenticated = false
             )
         }
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
+            taskManagerDatabase.clearAllTables()
+            statisticsDataStore.clear()
+            userInfoDataStore.clearUserInfo()
             tokenDataStore.clearToken()
             tokenDataStore.saveAuthState(false)
             tokenDataStore.saveUserRole("")

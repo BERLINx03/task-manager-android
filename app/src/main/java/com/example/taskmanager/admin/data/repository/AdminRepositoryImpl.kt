@@ -14,12 +14,20 @@ import com.example.taskmanager.auth.data.remote.reponsemodels.ResponseDto
 import com.example.taskmanager.core.data.local.dao.AdminDao
 import com.example.taskmanager.core.data.local.dao.DepartmentDao
 import com.example.taskmanager.core.data.local.dao.TaskDao
+import com.example.taskmanager.core.data.local.database.TaskManagerDatabase
 import com.example.taskmanager.core.data.local.datastore.StatisticsDataStore
 import com.example.taskmanager.core.data.mappers.toDepartment
 import com.example.taskmanager.core.data.mappers.toDepartmentEntity
 import com.example.taskmanager.core.data.mappers.toTask
 import com.example.taskmanager.core.data.mappers.toTaskEntity
 import com.example.taskmanager.core.data.remote.SharedApiService
+import com.example.taskmanager.core.utils.HttpStatusCodes.BAD_REQUEST
+import com.example.taskmanager.core.utils.HttpStatusCodes.CREATED
+import com.example.taskmanager.core.utils.HttpStatusCodes.FORBIDDEN
+import com.example.taskmanager.core.utils.HttpStatusCodes.HTTP_CONFLICT
+import com.example.taskmanager.core.utils.HttpStatusCodes.NOT_FOUND
+import com.example.taskmanager.core.utils.HttpStatusCodes.OK
+import com.example.taskmanager.core.utils.HttpStatusCodes.UNAUTHORIZED
 import com.example.taskmanager.core.utils.NetworkUtils
 import com.example.taskmanager.core.utils.Resource
 import kotlinx.coroutines.Dispatchers
@@ -45,10 +53,15 @@ class AdminRepositoryImpl @Inject constructor(
     private val mapper: AdminMapper,
     private val networkUtils: NetworkUtils,
     private val statisticsDataStore: StatisticsDataStore,
-    private val adminDao: AdminDao,
-    private val departmentDao: DepartmentDao,
-    private val taskDao: TaskDao
+    private val database: TaskManagerDatabase
 ) : AdminRepository {
+
+    private val managerDao = database.managerDao
+    private val employeeDao = database.employeeDao
+    private val departmentDao = database.departmentDao
+    private val taskDao = database.taskDao
+    private val adminDao = database.adminDao
+
 
     override suspend fun getCurrentAdmin(): Resource<Admin> {
         try {
@@ -596,6 +609,29 @@ class AdminRepositoryImpl @Inject constructor(
         }.flowOn(Dispatchers.IO)
     }
 
+    override suspend fun deleteManager(managerId: UUID): Resource<String> {
+        if (!networkUtils.isNetworkAvailable()) {
+            return Resource.Error("No internet connection. Try again later.")
+        }
+        try {
+            val response = adminServiceApi.deleteManager(managerId)
+            return if (response.isSuccess) {
+                if (managerDao.getManagerById(managerId) != null){
+                    managerDao.deleteManagerById(managerId)
+                }
+                Resource.Success(response.message)
+            } else {
+                Resource.Error(response.message)
+            }
+        } catch (e: IOException){
+            Timber.e("Network error: ${e.message}")
+            return Resource.Error("Something went wrong. Try again later")
+        } catch (e: Exception){
+            Timber.e("Unknown error: ${e.message}")
+            return Resource.Error("Something went wrong. Try again later")
+        }
+    }
+
     override suspend fun getDepartmentById(departmentId: String): Resource<ResponseDto<Department>> {
         TODO("Not yet implemented")
     }
@@ -727,16 +763,5 @@ class AdminRepositoryImpl @Inject constructor(
         sort: String?
     ): Resource<ResponseDto<PaginatedData<Task>>> {
         TODO("Not yet implemented")
-    }
-
-
-    companion object {
-        const val OK = HttpURLConnection.HTTP_OK
-        const val CREATED = HttpURLConnection.HTTP_CREATED
-        const val BAD_REQUEST = HttpURLConnection.HTTP_BAD_REQUEST
-        const val HTTP_CONFLICT = HttpURLConnection.HTTP_CONFLICT
-        const val UNAUTHORIZED = HttpURLConnection.HTTP_UNAUTHORIZED
-        const val FORBIDDEN = HttpURLConnection.HTTP_FORBIDDEN
-        const val NOT_FOUND = HttpURLConnection.HTTP_NOT_FOUND
     }
 }

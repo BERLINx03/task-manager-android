@@ -30,6 +30,7 @@ sealed class Screens(val route: String) {
     sealed class AppScreens(route: String) : Screens(route) {
         data object Dashboard : AppScreens("dashboard")
         data object Departments : AppScreens("departments")
+        data object Managers : AppScreens("managers")
         data object Profile : AppScreens("profile")
         data object Tasks : AppScreens("tasks")
     }

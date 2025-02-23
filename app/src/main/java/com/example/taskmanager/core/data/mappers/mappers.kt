@@ -2,8 +2,10 @@ package com.example.taskmanager.core.data.mappers
 
 import com.example.taskmanager.auth.data.remote.reponsemodels.ResponseDto
 import com.example.taskmanager.core.data.local.entities.DepartmentEntity
+import com.example.taskmanager.core.data.local.entities.ManagerEntity
 import com.example.taskmanager.core.data.local.entities.TaskEntity
 import com.example.taskmanager.core.domain.model.Department
+import com.example.taskmanager.core.domain.model.ManagerAndEmployee
 import com.example.taskmanager.core.domain.model.PaginatedData
 import com.example.taskmanager.core.domain.model.Task
 
@@ -81,6 +83,42 @@ fun ResponseDto.DepartmentResponse.toDepartment(): Department{
 fun DepartmentEntity.toDepartment(): Department{
     return Department(
         title = title,
+        id = id
+    )
+}
+
+fun ResponseDto.ManagerAndEmployeeResponse.toManagerAndEmployee(): ManagerAndEmployee{
+    return ManagerAndEmployee(
+        firstName = firstName,
+        lastName = lastName,
+        phoneNumber = phoneNumber,
+        gender = gender,
+        birthDate = birthDate,
+        departmentId = departmentId,
+        id = id
+    )
+}
+
+fun ManagerEntity.toManagerAndEmployee(): ManagerAndEmployee{
+    return ManagerAndEmployee(
+        firstName = firstName,
+        lastName = lastName,
+        phoneNumber = phoneNumber,
+        gender = gender,
+        birthDate = birthDate,
+        departmentId = departmentId,
+        id = id
+    )
+}
+
+fun ResponseDto.ManagerAndEmployeeResponse.toEntity(): ManagerEntity{
+    return ManagerEntity(
+        firstName = firstName,
+        lastName = lastName,
+        phoneNumber = phoneNumber,
+        gender = gender,
+        birthDate = birthDate,
+        departmentId = departmentId,
         id = id
     )
 }

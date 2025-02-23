@@ -74,4 +74,10 @@ class StatisticsDataStore @Inject constructor(
             preferences[employeeCount] = count
         }
     }
+
+    suspend fun clear(){
+        context.dataStore.edit {
+            it.clear()
+        }
+    }
 }

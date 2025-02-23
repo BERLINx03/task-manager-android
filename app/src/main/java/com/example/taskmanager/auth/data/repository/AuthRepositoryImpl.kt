@@ -14,6 +14,7 @@ import com.example.taskmanager.auth.data.remote.requestmodels.VerificationReques
 import com.example.taskmanager.auth.domain.repository.AuthRepository
 import com.example.taskmanager.auth.utils.AuthResult
 import retrofit2.HttpException
+import timber.log.Timber
 import java.io.IOException
 import javax.inject.Inject
 import java.net.HttpURLConnection
@@ -41,9 +42,11 @@ class AuthRepositoryImpl @Inject constructor(
                         try {
                             tokenDataStore.saveAuthState(true)
                             tokenDataStore.saveToken(token)
-                            AuthResult.Authenticated(response)
+                            tokenDataStore.saveUserRole(response.data.role)
+                            Timber.d("successfully login")
+                            return AuthResult.Authenticated(response)
                         } catch (e: Exception) {
-                            AuthResult.UnknownError("Failed to save authentication token")
+                            return AuthResult.UnknownError("Failed to save authentication token")
                         }
                     }
                 }
@@ -62,13 +65,13 @@ class AuthRepositoryImpl @Inject constructor(
                 }
             }
         } catch (e: IOException) {
-            Log.e(AUTH_REPOSITORY_TAG, "Network Failure", e)
-            AuthResult.UnknownError("Network Failure: ${e.localizedMessage}")
+            Timber.tag(AUTH_REPOSITORY_TAG).e(e, "Network Failure")
+            AuthResult.UnknownError("Network Failure or failed to connect to the server")
         } catch (e: HttpException) {
-            Log.e(AUTH_REPOSITORY_TAG, "HTTP Error", e)
+            Timber.tag(AUTH_REPOSITORY_TAG).e(e, "HTTP Error")
             AuthResult.UnknownError("HTTP Error: ${e.message()}")
         } catch (e: Exception) {
-            Log.e(AUTH_REPOSITORY_TAG, "Unknown Error", e)
+            Timber.tag(AUTH_REPOSITORY_TAG).e(e, "Unknown Error")
             AuthResult.UnknownError("Unknown Error: ${e.localizedMessage}")
         }
     }
@@ -96,7 +99,7 @@ class AuthRepositoryImpl @Inject constructor(
                 }
             }
         } catch (e: IOException) {
-            Log.e(AUTH_REPOSITORY_TAG, "Network Failure", e)
+            Timber.tag(AUTH_REPOSITORY_TAG).e(e, "Network Failure")
             AuthResult.UnknownError("Network Failure: ${e.localizedMessage}")
         } catch (e: HttpException) {
             Log.e(AUTH_REPOSITORY_TAG, "HTTP Error", e)

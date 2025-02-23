@@ -8,6 +8,7 @@ import androidx.room.Upsert
 import com.example.taskmanager.core.data.local.entities.DepartmentEntity
 import com.example.taskmanager.core.data.local.entities.TaskEntity
 import kotlinx.coroutines.flow.Flow
+import java.util.UUID
 
 /**
  * @author Abdallah Elsokkary
@@ -51,7 +52,7 @@ interface DepartmentDao {
     fun getAllDepartments(): Flow<List<DepartmentEntity>>
 
     @Query("SELECT * FROM departments WHERE id = :id")
-    fun getDepartmentById(id: String): Flow<DepartmentEntity?>
+    fun getDepartmentById(id: UUID): DepartmentEntity?
 
     @Upsert
     suspend fun upsertDepartments(departments: List<DepartmentEntity>)
@@ -60,7 +61,7 @@ interface DepartmentDao {
     suspend fun upsertDepartment(department: DepartmentEntity)
 
     @Query("DELETE FROM departments WHERE id = :id")
-    suspend fun deleteDepartment(id: String)
+    suspend fun deleteDepartment(id: UUID)
 
     @Query("DELETE FROM departments")
     suspend fun deleteAllDepartments()

@@ -80,6 +80,7 @@ fun DashboardScreen(
         drawerState = drawerState,
         user = user,
         loginViewModel = loginViewModel,
+        homeSelected = true,
         navController = navController
     ) {
         Column(
@@ -150,27 +151,6 @@ fun DashboardScreen(
                     )
                 )
             }
-
-            NavigationBar {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Home, "Home") },
-                    label = { Text("Home") },
-                    selected = true,
-                    onClick = { /* Handle home navigation */ }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Business, "Departments") },
-                    label = { Text("Departments") },
-                    selected = false,
-                    onClick = { navController.navigate(Screens.AppScreens.Departments.route)}
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Task, "Tasks") },
-                    label = { Text("Tasks") },
-                    selected = false,
-                    onClick = { /* Handle tasks navigation */ }
-                )
-            }
         }
     }
 }
@@ -212,7 +192,6 @@ fun DashboardContent(
                         title = "Admins",
                         count = state.adminsCount,
                         backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                        viewModel = viewModel
                     )
                 }
 
@@ -223,7 +202,6 @@ fun DashboardContent(
                         title = "Managers",
                         count = state.managersCount,
                         backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
-                        viewModel = viewModel
                     )
                 }
 
@@ -234,7 +212,6 @@ fun DashboardContent(
                         title = "Employees",
                         count = state.employeesCount,
                         backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        viewModel = viewModel
                     )
                 }
 
@@ -245,7 +222,6 @@ fun DashboardContent(
                         title = "Tasks",
                         count = state.tasksCount,
                         backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
-                        viewModel = viewModel
                     )
                 }
 
@@ -256,7 +232,6 @@ fun DashboardContent(
                         title = "Departments",
                         count = state.departmentsCount,
                         backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                        viewModel = viewModel
                     )
                 }
             }
@@ -284,16 +259,12 @@ fun StatisticCard(
     title: String,
     count: Int,
     backgroundColor: Color,
-    viewModel: DashboardViewModel,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
             .width(160.dp)
-            .height(120.dp)
-            .clickable {
-                viewModel.onIntent(DashboardIntents.GetAdminsCount)
-            },
+            .height(120.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
         Column(

@@ -27,7 +27,11 @@ import com.example.taskmanager.auth.presentation.viewmodel.SignUpAdminViewModel
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpEmployeeViewModel
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpManagerViewModel
 import com.example.taskmanager.core.presentation.view.DepartmentsScreen
+import com.example.taskmanager.core.presentation.view.ManagersScreen
+import com.example.taskmanager.core.presentation.view.TasksScreen
 import com.example.taskmanager.core.presentation.viewmodel.DepartmentsViewModel
+import com.example.taskmanager.core.presentation.viewmodel.ManagersViewModel
+import com.example.taskmanager.core.presentation.viewmodel.TasksViewModel
 import com.example.taskmanager.core.utils.Screens
 import com.example.taskmanager.core.ui.theme.TaskManagerTheme
 import com.example.taskmanager.core.utils.animatedComposable
@@ -41,6 +45,8 @@ class TaskManagerActivity : ComponentActivity() {
     private val signUpAdminViewModel: SignUpAdminViewModel by viewModels()
     private val dashboardViewModel: DashboardViewModel by viewModels()
     private val departmentViewModel: DepartmentsViewModel by viewModels()
+    private val tasksViewModel: TasksViewModel by viewModels()
+    private val managersViewModel: ManagersViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -153,15 +159,36 @@ class TaskManagerActivity : ComponentActivity() {
                             )
                         }
 
-                        animatedComposable(Screens.AppScreens.Departments.route){
+                        animatedComposable(Screens.AppScreens.Departments.route) {
                             DepartmentsScreen(
                                 departmentsViewModel = departmentViewModel,
                                 loginViewModel = loginViewModel,
                                 navController = navController,
                                 innerPadding = innerPadding,
-                            ){
+                            ) {
 
                             }
+                        }
+
+                        animatedComposable(Screens.AppScreens.Tasks.route) {
+                            TasksScreen(
+                                loginViewModel = loginViewModel,
+                                navController = navController,
+                                innerPadding = innerPadding,
+                                tasksViewModel = tasksViewModel
+                            ) {
+
+                            }
+                        }
+
+                        animatedComposable(Screens.AppScreens.Managers.route){
+                            ManagersScreen(
+                                loginViewModel = loginViewModel,
+                                navController = navController,
+                                innerPadding = innerPadding,
+                                managersViewModel = managersViewModel,
+                                departmentViewModel = departmentViewModel
+                            ) { }
                         }
                     }
                 }

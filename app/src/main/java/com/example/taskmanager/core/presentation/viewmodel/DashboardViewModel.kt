@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -47,16 +48,14 @@ class DashboardViewModel @Inject constructor(
                         user = user
                     )
                 }
+
+                Timber.i("user is ${user.firstName} ${user.lastName}")
             }
         }
     }
 
     fun onIntent(intent: DashboardIntents) {
         when (intent) {
-            is DashboardIntents.GetAdminsCount -> {
-                getAdminsCountFromNetwork()
-            }
-
             DashboardIntents.Refresh -> {
                 viewModelScope.launch {
                     _dashboardState.update { it.copy(isRefreshing = true) }

@@ -18,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.SupervisorAccount
 import androidx.compose.material.icons.filled.Task
@@ -31,8 +30,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -44,6 +41,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
@@ -134,7 +132,7 @@ fun DashboardScreen(
             ) {
                 DashboardContent(
                     state = state,
-                    viewModel = viewModel,
+                    navController = navController,
                     recentTasks = listOf(
                         TaskItem(
                             title = "Update Employee Handbook",
@@ -167,7 +165,7 @@ data class TaskItem(
 fun DashboardContent(
     modifier: Modifier = Modifier,
     state: DashboardState,
-    viewModel: DashboardViewModel,
+    navController: NavController,
     recentTasks: List<TaskItem>
 ) {
     LazyColumn(
@@ -192,6 +190,7 @@ fun DashboardContent(
                         title = "Admins",
                         count = state.adminsCount,
                         backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+                        navController = {  }
                     )
                 }
 
@@ -202,6 +201,7 @@ fun DashboardContent(
                         title = "Managers",
                         count = state.managersCount,
                         backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                        navController = { navController.navigate(Screens.AppScreens.Managers.route) }
                     )
                 }
 
@@ -212,6 +212,7 @@ fun DashboardContent(
                         title = "Employees",
                         count = state.employeesCount,
                         backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        navController = { navController.navigate(Screens.AppScreens.Managers.route) }
                     )
                 }
 
@@ -222,6 +223,7 @@ fun DashboardContent(
                         title = "Tasks",
                         count = state.tasksCount,
                         backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                        navController = { navController.navigate(Screens.AppScreens.Tasks.route) }
                     )
                 }
 
@@ -232,6 +234,7 @@ fun DashboardContent(
                         title = "Departments",
                         count = state.departmentsCount,
                         backgroundColor = MaterialTheme.colorScheme.errorContainer,
+                        navController = { navController.navigate(Screens.AppScreens.Departments.route) }
                     )
                 }
             }
@@ -259,12 +262,17 @@ fun StatisticCard(
     title: String,
     count: Int,
     backgroundColor: Color,
+    navController: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
             .width(160.dp)
-            .height(120.dp),
+            .height(120.dp)
+            .clickable {
+                navController()
+            }
+        ,
         colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
         Column(
@@ -296,7 +304,7 @@ fun StatisticCard(
 }
 
 @Composable
-fun TaskCard(task: TaskItem) {
+private fun TaskCard(task: TaskItem) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(

@@ -31,7 +31,7 @@ sealed class Screens(val route: String) {
         data object Dashboard : AppScreens("dashboard")
         data object Departments : AppScreens("departments")
         data object Managers : AppScreens("managers")
-        data object Profile : AppScreens("profile")
+        data object Profile : AppScreens("profile/{role}/{userId}")
         data object Tasks : AppScreens("tasks")
     }
 }

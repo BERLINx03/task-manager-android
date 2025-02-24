@@ -9,10 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import com.example.taskmanager.core.presentation.view.DashboardScreen
-import com.example.taskmanager.core.presentation.viewmodel.DashboardViewModel
+import androidx.navigation.navArgument
 import com.example.taskmanager.auth.presentation.view.LoginScreen
 import com.example.taskmanager.auth.presentation.view.RoleSelectionScreen
 import com.example.taskmanager.auth.presentation.view.SignUpAdminScreen
@@ -26,14 +27,18 @@ import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpAdminViewModel
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpEmployeeViewModel
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpManagerViewModel
+import com.example.taskmanager.core.presentation.view.DashboardScreen
 import com.example.taskmanager.core.presentation.view.DepartmentsScreen
 import com.example.taskmanager.core.presentation.view.ManagersScreen
+import com.example.taskmanager.core.presentation.view.ProfileScreen
 import com.example.taskmanager.core.presentation.view.TasksScreen
+import com.example.taskmanager.core.presentation.viewmodel.DashboardViewModel
 import com.example.taskmanager.core.presentation.viewmodel.DepartmentsViewModel
 import com.example.taskmanager.core.presentation.viewmodel.ManagersViewModel
+import com.example.taskmanager.core.presentation.viewmodel.ProfileViewModel
 import com.example.taskmanager.core.presentation.viewmodel.TasksViewModel
-import com.example.taskmanager.core.utils.Screens
 import com.example.taskmanager.core.ui.theme.TaskManagerTheme
+import com.example.taskmanager.core.utils.Screens
 import com.example.taskmanager.core.utils.animatedComposable
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -47,7 +52,7 @@ class TaskManagerActivity : ComponentActivity() {
     private val departmentViewModel: DepartmentsViewModel by viewModels()
     private val tasksViewModel: TasksViewModel by viewModels()
     private val managersViewModel: ManagersViewModel by viewModels()
-
+//    private val profileViewModel: ProfileViewModel by viewModels() you can't use same viewmodel for different screens of this
     override fun onCreate(savedInstanceState: Bundle?) {
 
         val splashScreen = installSplashScreen()
@@ -181,14 +186,30 @@ class TaskManagerActivity : ComponentActivity() {
                             }
                         }
 
-                        animatedComposable(Screens.AppScreens.Managers.route){
+                        animatedComposable(Screens.AppScreens.Managers.route) {
                             ManagersScreen(
                                 loginViewModel = loginViewModel,
                                 navController = navController,
-                                innerPadding = innerPadding,
                                 managersViewModel = managersViewModel,
                                 departmentViewModel = departmentViewModel
-                            ) { }
+                            )
+                        }
+                        animatedComposable(
+                            route = Screens.AppScreens.Profile.route,
+                            arguments = listOf(
+                                navArgument("userId") {
+                                    type = NavType.StringType
+                                },
+                                navArgument("role") {
+                                    type = NavType.StringType
+                                }
+                            )) {
+                            val profileViewModel: ProfileViewModel = hiltViewModel()
+
+                            ProfileScreen(
+                                profileViewModel = profileViewModel,
+                                navController = navController
+                            )
                         }
                     }
                 }

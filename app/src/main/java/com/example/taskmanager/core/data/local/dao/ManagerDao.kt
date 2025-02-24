@@ -50,6 +50,9 @@ interface ManagerDao {
     fun getTotalCount(search: String?): Int
 
     @Upsert
+    suspend fun upsertManager(manager: ManagerEntity)
+
+    @Upsert
     suspend fun upsertManagers(managers: List<ManagerEntity>)
 
     @Query("DELETE FROM managers")

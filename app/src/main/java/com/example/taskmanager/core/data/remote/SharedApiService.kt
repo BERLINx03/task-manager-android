@@ -59,6 +59,18 @@ interface SharedApiService{
     ): ResponseDto<ResponseDto.PaginatedResponse<ResponseDto.ManagerAndEmployeeResponse>>
 
     //(Admin, Manager)
+    @GET("/Managers/{managerId}")
+    suspend fun getManagerById(
+        @Path("managerId") managerId: UUID
+    ): ResponseDto<ResponseDto.ManagerAndEmployeeResponse>
+
+    //All
+    @GET("/Employees/{employeeId}")
+    suspend fun getEmployeeById(
+        @Path("employeeId") employeeId: UUID
+    ): ResponseDto<ResponseDto.ManagerAndEmployeeResponse>
+
+    //(Admin, Manager)
     @GET("/Employees")
     suspend fun getEmployees(
         @Query("Page") page: Int,
@@ -91,7 +103,7 @@ interface SharedApiService{
 
     //(Admin, Manager)
     @GET("/Tasks/Manager/{managerId}")
-    suspend fun getManagerTasks(
+    suspend fun getTasksManagedByManager(
         @Path("managerId") managerId: UUID,
         @Query("Page") page: Int,
         @Query("Limit") limit: Int,

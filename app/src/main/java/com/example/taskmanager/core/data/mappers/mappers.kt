@@ -2,6 +2,7 @@ package com.example.taskmanager.core.data.mappers
 
 import com.example.taskmanager.auth.data.remote.reponsemodels.ResponseDto
 import com.example.taskmanager.core.data.local.entities.DepartmentEntity
+import com.example.taskmanager.core.data.local.entities.EmployeeEntity
 import com.example.taskmanager.core.data.local.entities.ManagerEntity
 import com.example.taskmanager.core.data.local.entities.TaskEntity
 import com.example.taskmanager.core.domain.model.Department
@@ -66,28 +67,28 @@ fun TaskEntity.toTask(): Task {
     )
 }
 
-fun ResponseDto.DepartmentResponse.toDepartmentEntity(): DepartmentEntity{
+fun ResponseDto.DepartmentResponse.toDepartmentEntity(): DepartmentEntity {
     return DepartmentEntity(
         title = title,
         id = id
     )
 }
 
-fun ResponseDto.DepartmentResponse.toDepartment(): Department{
+fun ResponseDto.DepartmentResponse.toDepartment(): Department {
     return Department(
         title = title,
         id = id
     )
 }
 
-fun DepartmentEntity.toDepartment(): Department{
+fun DepartmentEntity.toDepartment(): Department {
     return Department(
         title = title,
         id = id
     )
 }
 
-fun ResponseDto.ManagerAndEmployeeResponse.toManagerAndEmployee(): ManagerAndEmployee{
+fun ResponseDto.ManagerAndEmployeeResponse.toManagerAndEmployee(): ManagerAndEmployee {
     return ManagerAndEmployee(
         firstName = firstName,
         lastName = lastName,
@@ -99,7 +100,7 @@ fun ResponseDto.ManagerAndEmployeeResponse.toManagerAndEmployee(): ManagerAndEmp
     )
 }
 
-fun ManagerEntity.toManagerAndEmployee(): ManagerAndEmployee{
+fun ManagerEntity.toManagerAndEmployee(): ManagerAndEmployee {
     return ManagerAndEmployee(
         firstName = firstName,
         lastName = lastName,
@@ -111,8 +112,32 @@ fun ManagerEntity.toManagerAndEmployee(): ManagerAndEmployee{
     )
 }
 
-fun ResponseDto.ManagerAndEmployeeResponse.toEntity(): ManagerEntity{
+fun EmployeeEntity.toManagerAndEmployee(): ManagerAndEmployee {
+    return ManagerAndEmployee(
+        firstName = firstName,
+        lastName = lastName,
+        phoneNumber = phoneNumber,
+        gender = gender,
+        birthDate = birthDate,
+        departmentId = departmentId,
+        id = id
+    )
+}
+
+fun ResponseDto.ManagerAndEmployeeResponse.toManagerEntity(): ManagerEntity {
     return ManagerEntity(
+        firstName = firstName,
+        lastName = lastName,
+        phoneNumber = phoneNumber,
+        gender = gender,
+        birthDate = birthDate,
+        departmentId = departmentId,
+        id = id
+    )
+}
+
+fun ResponseDto.ManagerAndEmployeeResponse.toEmployeeEntity(): EmployeeEntity {
+    return EmployeeEntity(
         firstName = firstName,
         lastName = lastName,
         phoneNumber = phoneNumber,

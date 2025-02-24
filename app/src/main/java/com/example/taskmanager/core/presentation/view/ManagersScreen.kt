@@ -1,6 +1,5 @@
 package com.example.taskmanager.core.presentation.view
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,12 +19,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Business
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.Female
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Male
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
@@ -41,9 +38,7 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
@@ -62,24 +57,19 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.material.icons.filled.Male
-import androidx.compose.material.icons.filled.Female
-import androidx.compose.material.icons.filled.Group
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
 import com.example.taskmanager.core.domain.model.Department
 import com.example.taskmanager.core.domain.model.ManagerAndEmployee
-import com.example.taskmanager.core.presentation.intents.DepartmentIntents
 import com.example.taskmanager.core.presentation.intents.ManagersIntents
-import com.example.taskmanager.core.presentation.state.DepartmentsState
 import com.example.taskmanager.core.presentation.viewmodel.DepartmentsViewModel
 import com.example.taskmanager.core.presentation.viewmodel.ManagersViewModel
 import com.example.taskmanager.core.utils.NavigationDrawer
 import com.example.taskmanager.core.utils.PermissionDialog
+import com.example.taskmanager.core.utils.Screens
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -93,8 +83,6 @@ fun ManagersScreen(
     loginViewModel: LoginViewModel,
     departmentViewModel: DepartmentsViewModel,
     navController: NavController,
-    innerPadding: PaddingValues,
-    navigateToManagerDetail: (String) -> Unit,
 ) {
     val state by managersViewModel.managersState.collectAsStateWithLifecycle()
     val user = state.user
@@ -202,8 +190,12 @@ fun ManagersScreen(
                                     manager = manager,
                                     departments = departmentState.departments,
                                     onClick = {
-                                        if (userRole == "Admin") {
-                                            navigateToManagerDetail(manager.id.toString())
+                                        if (userRole == "Admin" || userRole == "Manager") {
+                                            navController.navigate(
+                                                Screens.AppScreens.Profile.route
+                                                    .replace("{userId}",manager.id.toString())
+                                                    .replace("{role}","Manager")
+                                            )
                                         } else {
                                             showPermissionDialog.value = true
                                         }

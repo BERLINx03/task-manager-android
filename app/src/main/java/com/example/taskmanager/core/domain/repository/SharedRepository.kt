@@ -4,6 +4,7 @@ import com.example.taskmanager.auth.data.remote.reponsemodels.ResponseDto
 import com.example.taskmanager.core.domain.model.Department
 import com.example.taskmanager.core.domain.model.ManagerAndEmployee
 import com.example.taskmanager.core.domain.model.PaginatedData
+import com.example.taskmanager.core.domain.model.Task
 import com.example.taskmanager.core.utils.Resource
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
@@ -24,7 +25,11 @@ interface SharedRepository {
     // admin, manager
     suspend fun getManagerById(managerId: UUID): Resource<ManagerAndEmployee>
 
+    // all
     suspend fun getEmployeeById(employeeId: UUID): Resource<ManagerAndEmployee>
     // All
     suspend fun getDepartmentById(departmentId: UUID): Resource<Department>
+
+    // admin, manager
+    suspend fun getTasksManagedByManager(managerId: UUID, page: Int, limit: Int, search: String?, sort: String?, forceFetchFromRemote: Boolean): Flow<Resource<ResponseDto<PaginatedData<Task>>>>
 }

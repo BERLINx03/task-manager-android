@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
+import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 
@@ -14,10 +15,12 @@ import androidx.navigation.compose.composable
  */
 fun NavGraphBuilder.animatedComposable(
     route: String,
+    arguments: List<NamedNavArgument> = emptyList(),
     content: @Composable () -> Unit
 ) {
     composable(
         route = route,
+        arguments = arguments,
         enterTransition = {
             slideInHorizontally(
                 initialOffsetX = { fullWidth -> fullWidth },

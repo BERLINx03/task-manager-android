@@ -60,7 +60,7 @@ class AuthRepositoryImpl @Inject constructor(
                 HttpURLConnection.HTTP_INTERNAL_ERROR -> AuthResult.UnknownError("Server Error")
 
                 else -> {
-                    Log.e(AUTH_REPOSITORY_TAG, "Unexpected response code: ${response.statusCode}")
+                    Timber.tag(AUTH_REPOSITORY_TAG).e("Unexpected response code: ${response.statusCode}")
                     AuthResult.UnknownError("Unexpected Error: ${response.statusCode}")
                 }
             }
@@ -69,7 +69,7 @@ class AuthRepositoryImpl @Inject constructor(
             AuthResult.UnknownError("Network Failure or failed to connect to the server")
         } catch (e: HttpException) {
             Timber.tag(AUTH_REPOSITORY_TAG).e(e, "HTTP Error")
-            AuthResult.UnknownError("HTTP Error: ${e.message()}")
+            AuthResult.UnknownError("Invalid credentials")
         } catch (e: Exception) {
             Timber.tag(AUTH_REPOSITORY_TAG).e(e, "Unknown Error")
             AuthResult.UnknownError("Unknown Error: ${e.localizedMessage}")

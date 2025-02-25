@@ -65,6 +65,32 @@ interface TaskDao {
         sort: String? = null
     ): Flow<List<TaskEntity>>
 
+    @Query("""
+    SELECT * FROM tasks 
+    WHERE employeeId = :employeeId AND
+          (:search IS NULL OR 
+          title LIKE '%' || :search || '%' )
+    ORDER BY 
+    CASE :sort
+        WHEN 'name_asc' THEN title 
+        WHEN 'date_asc' THEN lastSyncTimestamp 
+        WHEN 'date_desc' THEN lastSyncTimestamp
+        ELSE title
+    END,
+    CASE :sort
+        WHEN 'name_desc' THEN 'DESC'
+        WHEN 'date_desc' THEN 'DESC'
+        ELSE 'ASC'
+    END
+    LIMIT :limit OFFSET ((:page - 1) * :limit)  
+""")
+    fun getEmployeeTasks(
+        employeeId: UUID,
+        page: Int,
+        limit: Int,
+        search: String? = null,
+        sort: String? = null
+    ): Flow<List<TaskEntity>>
 
     @Query("""
         SELECT COUNT(*) FROM tasks
@@ -72,15 +98,15 @@ interface TaskDao {
             (:search IS NULL OR
             title LIKE '%' || :search || '%')
     """)
-    fun getTasksCount(managerId: UUID,search: String? = null): Int
+    suspend fun getManagersTasksCount(managerId: UUID, search: String? = null): Int
 
     @Query("""
-    SELECT COUNT(*) FROM tasks
-    WHERE managerId = :managerId AND
-          (:search IS NULL OR 
-          title LIKE '%' || :search || '%' )
-""")
-    fun getManagerTasksCount(managerId: UUID, search: String? = null): Flow<Int>
+        SELECT COUNT(*) FROM tasks
+        WHERE employeeId = :employeeId AND
+            (:search IS NULL OR
+            title LIKE '%' || :search || '%')
+    """)
+    suspend fun getEmployeesTasksCount(employeeId: UUID, search: String? = null): Int
 
 
     @Query("""
@@ -91,7 +117,7 @@ interface TaskDao {
     fun getTasksCountFlow(search: String? = null): Flow<Int>
 
     @Query("SELECT * FROM tasks WHERE id = :id")
-    fun getTaskById(id: UUID): Flow<TaskEntity?>
+    fun getTaskById(id: UUID): TaskEntity?
 
     @Upsert
     suspend fun upsertTask(task: TaskEntity)

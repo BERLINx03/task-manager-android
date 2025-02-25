@@ -49,6 +49,9 @@ interface ManagerDao {
 """)
     fun getTotalCount(search: String?): Int
 
+    @Query("SELECT * FROM managers WHERE id = :managerId")
+    suspend fun getAllManagers(managerId: UUID): ManagerEntity
+
     @Upsert
     suspend fun upsertManager(manager: ManagerEntity)
 

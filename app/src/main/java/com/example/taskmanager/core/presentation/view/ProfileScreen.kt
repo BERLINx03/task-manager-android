@@ -42,8 +42,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,6 +62,8 @@ import androidx.navigation.NavController
 import com.example.taskmanager.core.domain.model.Task
 import com.example.taskmanager.core.presentation.intents.ProfileIntents
 import com.example.taskmanager.core.presentation.viewmodel.ProfileViewModel
+import com.example.taskmanager.core.utils.DeleteManagerDialog
+import java.util.UUID
 
 /**
  * @author Abdallah Elsokkary
@@ -76,143 +80,161 @@ fun ProfileScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     val pullRefreshState = rememberPullToRefreshState()
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            state = rememberLazyListState()
-        ) {
-            stickyHeader {
-                TopAppBar(
-                    title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "${state.firstName} ${state.lastName}",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
-                        }
-                    },
-                    actions = {
-                        if (userRole == "Admin") {
-                            IconButton(onClick = { showDeleteDialog = true }) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete User",
-                                    tint = colorScheme.error
+    LaunchedEffect(state.deletedSuccessfully) {
+        if (state.deletedSuccessfully) {
+            navController.navigateUp()
+        }
+    }
+
+    PullToRefreshBox(
+        state = pullRefreshState,
+        onRefresh = { profileViewModel.onIntent(ProfileIntents.Refresh) },
+        isRefreshing = state.isRefreshing,
+        indicator = {
+            Indicator(
+                modifier = Modifier.align(Alignment.TopCenter),
+                isRefreshing = state.isRefreshing,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                state = pullRefreshState
+            )
+        },
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                state = rememberLazyListState()
+            ) {
+                stickyHeader {
+                    TopAppBar(
+                        title = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "${state.firstName} ${state.lastName}",
+                                    style = MaterialTheme.typography.titleMedium
                                 )
                             }
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = colorScheme.background.copy(alpha = 0.95f)
-                    )
-                )
-            }
-
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Profile info card
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = colorScheme.surface
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(60.dp)
-                                        .background(
-                                            brush = Brush.linearGradient(
-                                                colors = listOf(
-                                                    colorScheme.primary,
-                                                    colorScheme.secondary
-                                                )
-                                            ),
-                                            shape = CircleShape
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "${state.firstName.take(1)}${state.lastName.take(1)}",
-                                        color = colorScheme.onPrimary,
-                                        fontSize = 24.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.width(16.dp))
-
-                                Column {
-                                    ProfileDetailItem(
-                                        icon = Icons.Default.Phone,
-                                        label = "Phone",
-                                        value = state.phoneNumber
-                                    )
-                                    ProfileDetailItem(
-                                        icon = if (state.gender == 0) Icons.Default.Male else Icons.Default.Female,
-                                        label = "Gender",
-                                        value = if (state.gender == 0) "Male" else "Female"
-                                    )
-                                    ProfileDetailItem(
-                                        icon = Icons.Default.DateRange,
-                                        label = "Birth Date",
-                                        value = state.birthDate
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = { navController.navigateUp() }) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                            }
+                        },
+                        actions = {
+                            if (userRole == "Admin") {
+                                IconButton(onClick = { showDeleteDialog = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Delete User",
+                                        tint = colorScheme.error
                                     )
                                 }
                             }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = if (profileViewModel.userType == "Manager")
-                            "Tasks Managed by ${state.firstName}"
-                        else
-                            "Tasks Assigned to ${state.firstName}",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp)
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = colorScheme.background.copy(alpha = 0.95f)
+                        )
                     )
                 }
-            }
 
-            items(state.tasks.size) { index ->
-                TaskCard(task = state.tasks[index])
-            }
-
-            if (state.tasks.isEmpty() && !state.isLoading) {
                 item {
-                    EmptyTasksPlaceholder()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Profile info card
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = colorScheme.surface
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(60.dp)
+                                            .background(
+                                                brush = Brush.linearGradient(
+                                                    colors = listOf(
+                                                        colorScheme.primary,
+                                                        colorScheme.secondary
+                                                    )
+                                                ),
+                                                shape = CircleShape
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "${state.firstName.take(1)}${
+                                                state.lastName.take(
+                                                    1
+                                                )
+                                            }",
+                                            color = colorScheme.onPrimary,
+                                            fontSize = 24.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.width(16.dp))
+
+                                    Column {
+                                        ProfileDetailItem(
+                                            icon = Icons.Default.Phone,
+                                            label = "Phone",
+                                            value = state.phoneNumber
+                                        )
+                                        ProfileDetailItem(
+                                            icon = if (state.gender == 0) Icons.Default.Male else Icons.Default.Female,
+                                            label = "Gender",
+                                            value = if (state.gender == 0) "Male" else "Female"
+                                        )
+                                        ProfileDetailItem(
+                                            icon = Icons.Default.DateRange,
+                                            label = "Birth Date",
+                                            value = state.birthDate
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = if (profileViewModel.userType == "Manager")
+                                "Tasks Managed by ${state.firstName}"
+                            else
+                                "Tasks Assigned to ${state.firstName}",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp)
+                        )
+                    }
+                }
+
+                items(state.tasks.size) { index ->
+                    TaskCard(task = state.tasks[index])
+                }
+
+                if (state.tasks.isEmpty() && !state.isLoading) {
+                    item {
+                        EmptyTasksPlaceholder()
+                    }
                 }
             }
-        }
-
-        PullToRefreshBox(
-            state = pullRefreshState,
-            onRefresh = { profileViewModel.onIntent(ProfileIntents.Refresh) },
-            modifier = Modifier.align(Alignment.TopCenter),
-            isRefreshing = state.isRefreshing
-        ) {
             if (state.isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier
@@ -221,8 +243,39 @@ fun ProfileScreen(
                 )
             }
         }
+        DeleteManagerDialog(
+            showDialog = showDeleteDialog,
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
+                if (profileViewModel.userType == "Manager") {
+                    run {
+                        profileViewModel.onIntent(
+                            ProfileIntents.DeleteManager(
+                                UUID.fromString(
+                                    profileViewModel.userId
+                                )
+                            )
+                        )
+                    }
+                } else if (profileViewModel.userType == "Employee") {
+                    run {
+                        profileViewModel.onIntent(
+                            ProfileIntents.DeleteEmployee(
+                                UUID.fromString(
+                                    profileViewModel.userId
+                                )
+                            )
+                        )
+                    }
+                }
+            },
+            isLoading = state.isLoading,
+            firstName = state.firstName,
+            lastName = state.lastName
+        )
     }
 }
+
 @Composable
 private fun ProfileDetailItem(
     icon: ImageVector,
@@ -261,18 +314,19 @@ private fun ProfileDetailItem(
         }
     }
 }
+
 @Composable
 private fun TaskCard(task: Task) {
     val colorScheme = MaterialTheme.colorScheme
 
-    val (statusText, statusColor) = when(task.status) {
+    val (statusText, statusColor) = when (task.status) {
         1 -> "TO DO" to colorScheme.primary
         2 -> "IN PROGRESS" to colorScheme.tertiary
         3 -> "DONE" to colorScheme.secondary
         else -> "UNKNOWN" to colorScheme.error
     }
 
-    val priorityInfo = when(task.priority) {
+    val priorityInfo = when (task.priority) {
         0 -> Triple("HIGH", colorScheme.error, Icons.Default.ArrowUpward)
         1 -> Triple("MEDIUM", colorScheme.tertiary, Icons.AutoMirrored.Filled.ArrowForward)
         2 -> Triple("LOW", colorScheme.secondary, Icons.Default.ArrowDownward)

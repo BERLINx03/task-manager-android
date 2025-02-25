@@ -6,8 +6,8 @@ import com.example.taskmanager.admin.domain.repository.AdminRepository
 import com.example.taskmanager.auth.data.local.TokenDataStore
 import com.example.taskmanager.core.data.local.datastore.UserInfoDataStore
 import com.example.taskmanager.core.domain.repository.SharedRepository
-import com.example.taskmanager.core.presentation.intents.ManagersIntents
-import com.example.taskmanager.core.presentation.state.ManagersState
+import com.example.taskmanager.core.presentation.intents.EmployeesIntents
+import com.example.taskmanager.core.presentation.state.EmployeesState
 import com.example.taskmanager.core.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -17,104 +17,113 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.UUID
 import javax.inject.Inject
 
 /**
  * @author Abdallah Elsokkary
  */
 @HiltViewModel
-class ManagersViewModel @Inject constructor(
+class EmployeesViewModel @Inject constructor(
     private val sharedRepository: SharedRepository,
     private val adminRepository: AdminRepository,
     private val userInfoDataStore: UserInfoDataStore,
     userRoleDataStore: TokenDataStore,
 ) : ViewModel() {
 
-    private val _managersState = MutableStateFlow(ManagersState())
-    val managersState = _managersState.asStateFlow()
+    private val _employeesState = MutableStateFlow(EmployeesState())
+    val employeesState = _employeesState.asStateFlow()
 
     val userRole = userRoleDataStore.userRole
 
     private val pageSize = 10
 
     init {
-        loadManager(forceFetchFromRemote = false)
+        loadEmployees(forceFetchFromRemote = false)
         viewModelScope.launch {
             userInfoDataStore.userInfoFlow.collect { user ->
-                _managersState.update {
+                _employeesState.update {
                     it.copy(user = user)
                 }
             }
         }
     }
 
-    fun onIntent(intent: ManagersIntents) {
+    fun onIntent(intent: EmployeesIntents) {
         when (intent) {
-            is ManagersIntents.Load -> loadManager(intent.forceFetchFromRemote)
-            ManagersIntents.LoadNextPage -> loadNextPage()
-            ManagersIntents.LoadPreviousPage -> loadPreviousPage()
-            is ManagersIntents.OnSearchQueryChange -> search(query = intent.query)
-            ManagersIntents.Refresh -> {
-                _managersState.update { it.copy(isRefreshing = true) }
+            is EmployeesIntents.Load -> loadEmployees(intent.forceFetchFromRemote)
+            is EmployeesIntents.LoadNextPage -> loadNextPage()
+            is EmployeesIntents.LoadPreviousPage -> loadPreviousPage()
+            is EmployeesIntents.OnSearchQueryChange -> search(query = intent.query)
+            is EmployeesIntents.Refresh -> {
+                _employeesState.update { it.copy(isRefreshing = true) }
                 viewModelScope.launch {
                     try {
-                        loadManager(forceFetchFromRemote = true)
+                        loadEmployees(forceFetchFromRemote = true)
                         delay(300)
                     } finally {
-                        _managersState.update { it.copy(isRefreshing = false) }
+                        _employeesState.update { it.copy(isRefreshing = false) }
                     }
                 }
             }
+
+            is EmployeesIntents.SetSortOption -> setSortOption(intent.sortOption)
         }
     }
+    private fun setSortOption(sortOption: String) {
+        if (_employeesState.value.sortOption == sortOption) return
 
-    private fun loadManager(forceFetchFromRemote: Boolean) {
-        if (_managersState.value.isLoading) return
+        _employeesState.update {
+            it.copy(sortOption = sortOption)
+        }
+        loadEmployees(forceFetchFromRemote = false)
+    }
 
-        _managersState.update {
+    private fun loadEmployees(forceFetchFromRemote: Boolean) {
+        if (_employeesState.value.isLoading) return
+
+        _employeesState.update {
             it.copy(isLoading = true)
         }
         viewModelScope.launch {
-            sharedRepository.getPagedManagers(
+            sharedRepository.getPagedEmployees(
                 page = 1,
                 limit = pageSize,
-                search = _managersState.value.searchQuery,
-                sort = null,
+                search = _employeesState.value.searchQuery,
+                sort = _employeesState.value.sortOption,
                 forceFetchFromRemote = forceFetchFromRemote,
             ).collectLatest { resource ->
                 when (resource) {
                     is Resource.Error -> {
-                        _managersState.update {
+                        _employeesState.update {
                             it.copy(
                                 errorMessage = resource.message,
                                 isLoading = false
                             )
                         }
-                        Timber.e("Error loading managers: ${resource.message}")
+                        Timber.e("Error loading employees: ${resource.message}")
                     }
 
                     is Resource.Loading -> {
-                        _managersState.update { current ->
-                            current.copy(
+                        _employeesState.update {
+                            it.copy(
                                 isLoading = resource.isLoading
                             )
                         }
                     }
 
                     is Resource.Success -> {
-                        val managers = resource.data.data
-                        if (managers != null) {
-                            _managersState.update {
+                        val employees = resource.data.data
+                        if (employees != null) {
+                            _employeesState.update {
                                 it.copy(
-                                    managers = managers.items,
-                                    currentPage = managers.page,
+                                    employees = employees.items,
+                                    currentPage = employees.page,
                                     totalPages = calculateTotalPages(
-                                        managers.totalCount,
-                                        managers.pageSize
+                                        employees.totalCount,
+                                        employees.pageSize
                                     ),
-                                    hasNextPage = managers.hasNextPage,
-                                    hasPreviousPage = managers.hasPreviousPage,
+                                    hasNextPage = employees.hasNextPage,
+                                    hasPreviousPage = employees.hasPreviousPage,
                                     errorMessage = null,
                                     isLoading = false
                                 )
@@ -127,21 +136,21 @@ class ManagersViewModel @Inject constructor(
     }
 
     private fun loadNextPage() {
-        if (!_managersState.value.hasNextPage || _managersState.value.isLoading) return
+        if (!_employeesState.value.hasNextPage || _employeesState.value.isLoading) return
 
-        _managersState.update { it.copy(isLoading = true) }
+        _employeesState.update { it.copy(isLoading = true) }
 
         viewModelScope.launch {
-            sharedRepository.getPagedManagers(
-                page = _managersState.value.currentPage + 1,
+            sharedRepository.getPagedEmployees(
+                page = _employeesState.value.currentPage + 1,
                 limit = pageSize,
-                search = _managersState.value.searchQuery,
-                sort = null,
+                search = _employeesState.value.searchQuery,
+                sort = _employeesState.value.sortOption,
                 forceFetchFromRemote = false,
             ).collectLatest { resource ->
                 when (resource) {
                     is Resource.Error -> {
-                        _managersState.update {
+                        _employeesState.update {
                             it.copy(
                                 errorMessage = resource.message,
                                 isLoading = false
@@ -150,7 +159,7 @@ class ManagersViewModel @Inject constructor(
                     }
 
                     is Resource.Loading -> {
-                        _managersState.update { current ->
+                        _employeesState.update { current ->
                             current.copy(
                                 isLoading = resource.isLoading
                             )
@@ -158,21 +167,21 @@ class ManagersViewModel @Inject constructor(
                     }
 
                     is Resource.Success -> {
-                        val managers = resource.data.data
-                        if (managers != null) {
-                            _managersState.update {
+                        val employees = resource.data.data
+                        if (employees != null) {
+                            _employeesState.update {
                                 it.copy(
-                                    managers = managers.items,
-                                    currentPage = managers.page,
-                                    hasNextPage = managers.hasNextPage,
-                                    hasPreviousPage = managers.hasPreviousPage,
+                                    employees = employees.items,
+                                    currentPage = employees.page,
+                                    hasNextPage = employees.hasNextPage,
+                                    hasPreviousPage = employees.hasPreviousPage,
                                     errorMessage = null,
                                 )
                             }
                         } else {
-                            _managersState.update {
+                            _employeesState.update {
                                 it.copy(
-                                    errorMessage = "No managers found",
+                                    errorMessage = "No employees found",
                                     isLoading = false
                                 )
                             }
@@ -184,24 +193,24 @@ class ManagersViewModel @Inject constructor(
     }
 
     private fun loadPreviousPage() {
-        if (!_managersState.value.hasPreviousPage || _managersState.value.isLoading) return
+        if (!_employeesState.value.hasPreviousPage || _employeesState.value.isLoading) return
 
-        _managersState.update { it.copy(isLoading = true) }
+        _employeesState.update { it.copy(isLoading = true) }
 
-        val previousPage = _managersState.value.currentPage - 1
+        val previousPage = _employeesState.value.currentPage - 1
         if (previousPage < 1) return
 
         viewModelScope.launch {
-            sharedRepository.getPagedManagers(
+            sharedRepository.getPagedEmployees(
                 page = previousPage,
                 limit = pageSize,
-                search = _managersState.value.searchQuery,
-                sort = null,
+                search = _employeesState.value.searchQuery,
+                sort = _employeesState.value.sortOption,
                 forceFetchFromRemote = false,
             ).collectLatest { resource ->
                 when (resource) {
                     is Resource.Error -> {
-                        _managersState.update {
+                        _employeesState.update {
                             it.copy(
                                 errorMessage = resource.message,
                                 isLoading = false
@@ -210,7 +219,7 @@ class ManagersViewModel @Inject constructor(
                     }
 
                     is Resource.Loading -> {
-                        _managersState.update { current ->
+                        _employeesState.update { current ->
                             current.copy(
                                 isLoading = resource.isLoading
                             )
@@ -218,22 +227,22 @@ class ManagersViewModel @Inject constructor(
                     }
 
                     is Resource.Success -> {
-                        val managers = resource.data.data
-                        if (managers != null) {
-                            _managersState.update {
+                        val employees = resource.data.data
+                        if (employees != null) {
+                            _employeesState.update {
                                 it.copy(
-                                    managers = managers.items,
-                                    currentPage = managers.page,
-                                    hasNextPage = managers.hasNextPage,
-                                    hasPreviousPage = managers.hasPreviousPage,
+                                    employees = employees.items,
+                                    currentPage = employees.page,
+                                    hasNextPage = employees.hasNextPage,
+                                    hasPreviousPage = employees.hasPreviousPage,
                                     errorMessage = null,
                                     isLoading = false
                                 )
                             }
                         } else {
-                            _managersState.update {
+                            _employeesState.update {
                                 it.copy(
-                                    errorMessage = "No managers found",
+                                    errorMessage = "No employees found",
                                     isLoading = false
                                 )
                             }
@@ -245,11 +254,11 @@ class ManagersViewModel @Inject constructor(
     }
 
     private fun search(query: String) {
-        if (_managersState.value.isLoading) return
-        _managersState.update { state ->
+        if (_employeesState.value.isLoading) return
+        _employeesState.update { state ->
             state.copy(searchQuery = query.takeIf { it.isNotBlank() })
         }
-        loadManager(forceFetchFromRemote = true)
+        loadEmployees(forceFetchFromRemote = true)
     }
 
     private fun calculateTotalPages(totalCount: Int, pageSize: Int): Int {

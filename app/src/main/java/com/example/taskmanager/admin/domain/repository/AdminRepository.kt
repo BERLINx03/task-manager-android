@@ -32,11 +32,14 @@ interface AdminRepository {
 
     suspend fun getAdminsCountFromNetwork(): Flow<Resource<Int>>
 
-    suspend fun updateAdmin(admin: UpdateAdminRequestDto): Resource<String>
+    suspend fun updateAdmin(admin: UpdateAdminRequestDto): Resource<UUID>
 
 
-    suspend fun deleteManager(managerId: UUID): Resource<String>
-    suspend fun createDepartment(title: String): Resource<ResponseDto<Department>>
+    suspend fun deleteManager(managerId: UUID): Resource<ResponseDto<String>>
+
+    suspend fun deleteEmployee(employeeId: UUID): Resource<ResponseDto<String>>
+
+    suspend fun addDepartment(title: String): Resource<Department>
 
     suspend fun getDepartments(
         page: Int,
@@ -47,15 +50,8 @@ interface AdminRepository {
         isRefreshing: Boolean
     ): Flow<Resource<ResponseDto<PaginatedData<Department>>>>
 
-    suspend fun getDepartmentById(departmentId: String): Resource<ResponseDto<Department>>
-    suspend fun updateDepartment(departmentId: String, title: String): Resource<ResponseDto<String>>
-    suspend fun deleteDepartment(departmentId: String): Resource<ResponseDto<String>>
-    suspend fun getDepartmentEmployees(departmentId: String, page: Int, limit: Int, search: String?, sort: String?): Resource<ResponseDto<PaginatedData<Department>>>
-    suspend fun getDepartmentManagers(departmentId: String, page: Int, limit: Int, search: String?, sort: String?): Resource<ResponseDto<PaginatedData<Department>>>
-
-    suspend fun getTaskById(taskId: UUID): Resource<ResponseDto<Task>>
-    suspend fun getEmployeeTasks(employeeId: UUID, page: Int, limit: Int, search: String?, sort: String?): Resource<ResponseDto<PaginatedData<Task>>>
-    suspend fun getManagerTasks(managerId: UUID, page: Int, limit: Int, search: String?, sort: String?): Resource<ResponseDto<PaginatedData<Task>>>
+    suspend fun updateDepartment(departmentId: String, title: String): Resource<String>
+    suspend fun deleteDepartment(departmentId: String): Resource<String>
     suspend fun getCachedDepartmentsCount(): Resource<Int>
     suspend fun getDepartmentsCountFromNetwork(): Flow<Resource<Int>>
     suspend fun getCachedTasksCount(): Resource<Int>

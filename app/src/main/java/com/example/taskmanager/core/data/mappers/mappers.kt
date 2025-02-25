@@ -81,6 +81,13 @@ fun ResponseDto.DepartmentResponse.toDepartment(): Department {
     )
 }
 
+fun Department.toDepartmentEntity(): DepartmentEntity {
+    return DepartmentEntity(
+        title = title,
+        id = id
+    )
+}
+
 fun DepartmentEntity.toDepartment(): Department {
     return Department(
         title = title,

@@ -25,11 +25,26 @@ interface SharedRepository {
     // admin, manager
     suspend fun getManagerById(managerId: UUID): Resource<ManagerAndEmployee>
 
-    // all
-    suspend fun getEmployeeById(employeeId: UUID): Resource<ManagerAndEmployee>
-    // All
-    suspend fun getDepartmentById(departmentId: UUID): Resource<Department>
-
     // admin, manager
     suspend fun getTasksManagedByManager(managerId: UUID, page: Int, limit: Int, search: String?, sort: String?, forceFetchFromRemote: Boolean): Flow<Resource<ResponseDto<PaginatedData<Task>>>>
+
+    // All
+    suspend fun getPagedEmployees(
+        page: Int,
+        limit: Int,
+        search: String?,
+        sort: String?,
+        forceFetchFromRemote: Boolean
+    ): Flow<Resource<ResponseDto<PaginatedData<ManagerAndEmployee>>>>
+
+    // all
+    suspend fun getEmployeeById(employeeId: UUID): Resource<ManagerAndEmployee>
+
+    // all but employee only his own tasks
+    suspend fun getTasksAssignedToEmployee(employeeId: UUID, page: Int, limit: Int, search: String?, sort: String?, forceFetchFromRemote: Boolean): Flow<Resource<ResponseDto<PaginatedData<Task>>>>
+
+
+    suspend fun getTaskById(taskId: UUID): Resource<Task>
+    // All
+    suspend fun getDepartmentById(departmentId: UUID): Resource<Department>
 }

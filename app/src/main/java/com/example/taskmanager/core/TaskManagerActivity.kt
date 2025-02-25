@@ -27,15 +27,20 @@ import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpAdminViewModel
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpEmployeeViewModel
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpManagerViewModel
+import com.example.taskmanager.core.presentation.state.EmployeesState
 import com.example.taskmanager.core.presentation.view.DashboardScreen
 import com.example.taskmanager.core.presentation.view.DepartmentsScreen
+import com.example.taskmanager.core.presentation.view.EmployeesScreen
 import com.example.taskmanager.core.presentation.view.ManagersScreen
 import com.example.taskmanager.core.presentation.view.ProfileScreen
+import com.example.taskmanager.core.presentation.view.TaskDetailsScreen
 import com.example.taskmanager.core.presentation.view.TasksScreen
 import com.example.taskmanager.core.presentation.viewmodel.DashboardViewModel
 import com.example.taskmanager.core.presentation.viewmodel.DepartmentsViewModel
+import com.example.taskmanager.core.presentation.viewmodel.EmployeesViewModel
 import com.example.taskmanager.core.presentation.viewmodel.ManagersViewModel
 import com.example.taskmanager.core.presentation.viewmodel.ProfileViewModel
+import com.example.taskmanager.core.presentation.viewmodel.TaskDetailsViewModel
 import com.example.taskmanager.core.presentation.viewmodel.TasksViewModel
 import com.example.taskmanager.core.ui.theme.TaskManagerTheme
 import com.example.taskmanager.core.utils.Screens
@@ -52,7 +57,9 @@ class TaskManagerActivity : ComponentActivity() {
     private val departmentViewModel: DepartmentsViewModel by viewModels()
     private val tasksViewModel: TasksViewModel by viewModels()
     private val managersViewModel: ManagersViewModel by viewModels()
-//    private val profileViewModel: ProfileViewModel by viewModels() you can't use same viewmodel for different screens of this
+    private val employeesViewModel: EmployeesViewModel by viewModels()
+
+    //    private val profileViewModel: ProfileViewModel by viewModels() you can't use same viewmodel for different screens of this
     override fun onCreate(savedInstanceState: Bundle?) {
 
         val splashScreen = installSplashScreen()
@@ -179,11 +186,8 @@ class TaskManagerActivity : ComponentActivity() {
                             TasksScreen(
                                 loginViewModel = loginViewModel,
                                 navController = navController,
-                                innerPadding = innerPadding,
                                 tasksViewModel = tasksViewModel
-                            ) {
-
-                            }
+                            )
                         }
 
                         animatedComposable(Screens.AppScreens.Managers.route) {
@@ -191,6 +195,15 @@ class TaskManagerActivity : ComponentActivity() {
                                 loginViewModel = loginViewModel,
                                 navController = navController,
                                 managersViewModel = managersViewModel,
+                                departmentViewModel = departmentViewModel
+                            )
+                        }
+
+                        animatedComposable(Screens.AppScreens.Employees.route) {
+                            EmployeesScreen(
+                                loginViewModel = loginViewModel,
+                                navController = navController,
+                                employeesViewModel = employeesViewModel,
                                 departmentViewModel = departmentViewModel
                             )
                         }
@@ -208,6 +221,20 @@ class TaskManagerActivity : ComponentActivity() {
 
                             ProfileScreen(
                                 profileViewModel = profileViewModel,
+                                navController = navController
+                            )
+                        }
+
+                        animatedComposable(
+                            route = Screens.AppScreens.TaskDetails.route,
+                            arguments = listOf(
+                                navArgument("taskId") { type = NavType.StringType },
+                                navArgument("role") { type = NavType.StringType }
+                            )) {
+                            val taskDetailsViewModel: TaskDetailsViewModel = hiltViewModel()
+
+                            TaskDetailsScreen(
+                                taskDetailsViewModel = taskDetailsViewModel,
                                 navController = navController
                             )
                         }

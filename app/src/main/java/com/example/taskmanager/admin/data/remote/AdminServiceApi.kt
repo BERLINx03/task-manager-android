@@ -40,8 +40,13 @@ interface AdminServiceApi {
         @Path("managerId") managerId: UUID
     ): ResponseDto<String>
 
+    @DELETE("/Employees/{employeeId}")
+    suspend fun deleteEmployee(
+        @Path("employeeId") employeeId: UUID
+    ): ResponseDto<String>
+
     @POST("/Department")
-    suspend fun createDepartment(
+    suspend fun addDepartment(
         @Body title: String
     ): ResponseDto<ResponseDto.DepartmentResponse>
 

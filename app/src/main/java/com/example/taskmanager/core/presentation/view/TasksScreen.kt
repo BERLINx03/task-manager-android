@@ -78,6 +78,7 @@ import com.example.taskmanager.core.presentation.intents.TasksIntents
 import com.example.taskmanager.core.presentation.viewmodel.TasksViewModel
 import com.example.taskmanager.core.utils.NavigationDrawer
 import com.example.taskmanager.core.utils.PermissionDialog
+import com.example.taskmanager.core.utils.Screens
 import kotlinx.coroutines.launch
 
 /**
@@ -89,8 +90,6 @@ fun TasksScreen(
     tasksViewModel: TasksViewModel,
     loginViewModel: LoginViewModel,
     navController: NavController,
-    innerPadding: PaddingValues,
-    navigateToTaskDetail: (String) -> Unit,
 ) {
     val state by tasksViewModel.tasksState.collectAsStateWithLifecycle()
     val user = state.user
@@ -249,11 +248,11 @@ fun TasksScreen(
                                     TaskCard(
                                         task = task,
                                         onClick = {
-                                            if (userRole == "Admin") {
-                                                navigateToTaskDetail(task.id.toString())
-                                            } else {
-                                                showPermissionDialog.value = true
-                                            }
+                                            navController.navigate(
+                                                Screens.AppScreens.TaskDetails.route
+                                                    .replace("{taskId}", task.id.toString())
+                                                    .replace("{role}", userRole)
+                                            )
                                         }
                                     )
                                 }

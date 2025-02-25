@@ -11,9 +11,6 @@ import com.example.taskmanager.core.domain.model.PaginatedData
 import com.example.taskmanager.core.domain.model.Task
 import com.example.taskmanager.admin.domain.repository.AdminRepository
 import com.example.taskmanager.auth.data.remote.reponsemodels.ResponseDto
-import com.example.taskmanager.core.data.local.dao.AdminDao
-import com.example.taskmanager.core.data.local.dao.DepartmentDao
-import com.example.taskmanager.core.data.local.dao.TaskDao
 import com.example.taskmanager.core.data.local.database.TaskManagerDatabase
 import com.example.taskmanager.core.data.local.datastore.StatisticsDataStore
 import com.example.taskmanager.core.data.mappers.toDepartment
@@ -30,6 +27,8 @@ import com.example.taskmanager.core.utils.HttpStatusCodes.OK
 import com.example.taskmanager.core.utils.HttpStatusCodes.UNAUTHORIZED
 import com.example.taskmanager.core.utils.NetworkUtils
 import com.example.taskmanager.core.utils.Resource
+import com.example.taskmanager.core.utils.getIOExceptionMessage
+import com.example.taskmanager.core.utils.getUserFriendlyMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -39,7 +38,6 @@ import kotlinx.coroutines.flow.flowOn
 import retrofit2.HttpException
 import timber.log.Timber
 import java.io.IOException
-import java.net.HttpURLConnection
 import java.util.UUID
 import javax.inject.Inject
 
@@ -61,6 +59,7 @@ class AdminRepositoryImpl @Inject constructor(
     private val departmentDao = database.departmentDao
     private val taskDao = database.taskDao
     private val adminDao = database.adminDao
+    private val hasNetwork = networkUtils.isNetworkAvailable()
 
 
     override suspend fun getCurrentAdmin(): Resource<Admin> {
@@ -301,28 +300,31 @@ class AdminRepositoryImpl @Inject constructor(
         }.flowOn(Dispatchers.IO)
     }
 
-    override suspend fun updateAdmin(admin: UpdateAdminRequestDto): Resource<String> {
-        val hasNetwork = networkUtils.isNetworkAvailable()
+    // Done no need to review later
+    override suspend fun updateAdmin(admin: UpdateAdminRequestDto): Resource<UUID> {
         if (!hasNetwork) {
             return Resource.Error("No internet connection. Try again later.")
         }
         try {
             val adminResponse = adminServiceApi.updateAdmin(admin)
-            when (adminResponse.statusCode) {
+            return when (adminResponse.statusCode) {
                 OK, CREATED -> {
-                    val currentAdmin = adminResponse.data?.let { adminDao.getAdminById(it) }
-                    currentAdmin?.let {
-                        adminDao.resetAndUpsertAdmin(it)
+                    if (adminResponse.data != null) {
+                        val adminEntity = adminDao.getAdminById(adminResponse.data)
+                        if (adminEntity != null) {
+                            adminDao.upsertAdmin(adminEntity.copy(lastSyncTimestamp = System.currentTimeMillis()))
+                        } else {
+                            Timber.w("Admin not found in local database: ${adminResponse.data}")
+                        }
+                        Resource.Success(adminResponse.data)
+                    } else {
+                        Timber.e("Response successful but data is null")
+                        Resource.Error("Server returned success but no data")
                     }
-                    return Resource.Success(adminResponse.message)
                 }
-
-                BAD_REQUEST -> return Resource.Error(adminResponse.message)
-                UNAUTHORIZED -> return Resource.Error(adminResponse.message)
-                FORBIDDEN -> return Resource.Error(adminResponse.message)
-                NOT_FOUND -> return Resource.Error(adminResponse.message)
-                HTTP_CONFLICT -> return Resource.Error(adminResponse.message)
-                else -> return Resource.Error(adminResponse.message)
+                BAD_REQUEST, UNAUTHORIZED, FORBIDDEN, NOT_FOUND, HTTP_CONFLICT ->
+                    Resource.Error(getUserFriendlyMessage(adminResponse.statusCode))
+                else -> Resource.Error(getUserFriendlyMessage(adminResponse.statusCode))
             }
         } catch (e: IOException) {
             Timber.e(e, "Network failure occurred")
@@ -336,8 +338,43 @@ class AdminRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun createDepartment(title: String): Resource<ResponseDto<Department>> {
-        TODO("Not yet implemented")
+    // Done no need to review later
+    override suspend fun addDepartment(title: String): Resource<Department> {
+        if (!networkUtils.isNetworkAvailable())
+            return Resource.Error("No internet connection. Try again later.")
+
+        try {
+            val response = adminServiceApi.addDepartment(title)
+            val department = response.data?.toDepartment()
+            when (response.statusCode) {
+                OK -> {
+                    if (department != null) {
+                        Timber.tag("AdminRepositoryImpl").d(getUserFriendlyMessage(OK))
+                        departmentDao.upsertDepartment(department.toDepartmentEntity())
+                        return Resource.Success(department)
+                    } else {
+                        Timber.tag("AdminRepositoryImpl").d(getUserFriendlyMessage(OK))
+                        return Resource.Error("No department data available")
+                    }
+                }
+                BAD_REQUEST,UNAUTHORIZED,FORBIDDEN,NOT_FOUND,HTTP_CONFLICT -> {
+                    return Resource.Error(getUserFriendlyMessage(statusCode = response.statusCode))
+                }
+                else -> {
+                    Timber.e("Unknown error status code: ${response.statusCode} - ${response.message}")
+                    return Resource.Error(getUserFriendlyMessage(statusCode = response.statusCode))
+                }
+            }
+        } catch (e: IOException) {
+            Timber.e(e, "Network failure occurred")
+            return Resource.Error(getIOExceptionMessage(e))
+        } catch (e: HttpException){
+            Timber.e(e, "HTTP exception occurred: ${e.code()}")
+            return Resource.Error(getUserFriendlyMessage(e.code()))
+        } catch (e: Exception){
+            Timber.e(e, "Unknown exception occurred")
+            return Resource.Error("Something went wrong. Try again later")
+        }
     }
 
     override suspend fun getCachedAdminsCount(): Resource<Int> {
@@ -432,21 +469,27 @@ class AdminRepositoryImpl @Inject constructor(
 
         try {
             val tasksCountResponse = adminServiceApi.getTasks(1, 1).data?.totalCount
-
+            Timber.d("Tasks total count in try block: $tasksCountResponse")
             when {
-                tasksCountResponse == null ->
+                tasksCountResponse == null -> {
+                    Timber.d("Tasks total count in null block: $tasksCountResponse")
                     emit(Resource.Error("Failed to get task count"))
+                }
 
                 else -> {
+                    Timber.d("Tasks total count in else block: $tasksCountResponse")
                     statisticsDataStore.saveTaskCount(tasksCountResponse)
                     emit(Resource.Success(tasksCountResponse))
                 }
             }
         } catch (e: IOException) {
+            Timber.d("Tasks total count in catch block: ${e.message}")
             emit(Resource.Error("Network error: ${e.message}"))
         } catch (e: HttpException) {
+            Timber.d("Tasks total count in catch block: ${e.message}")
             emit(Resource.Error("HTTP error: ${e.message}"))
         } catch (e: Exception) {
+            Timber.d("Tasks total count in catch block: ${e.message}")
             emit(Resource.Error("Unknown error: ${e.message}"))
         } finally {
             emit(Resource.Loading(false))
@@ -609,7 +652,7 @@ class AdminRepositoryImpl @Inject constructor(
         }.flowOn(Dispatchers.IO)
     }
 
-    override suspend fun deleteManager(managerId: UUID): Resource<String> {
+    override suspend fun deleteManager(managerId: UUID): Resource<ResponseDto<String>> {
         if (!networkUtils.isNetworkAvailable()) {
             return Resource.Error("No internet connection. Try again later.")
         }
@@ -619,7 +662,45 @@ class AdminRepositoryImpl @Inject constructor(
                 if (managerDao.getManagerById(managerId) != null){
                     managerDao.deleteManagerById(managerId)
                 }
-                Resource.Success(response.message)
+                Resource.Success(
+                    ResponseDto(
+                        isSuccess = response.isSuccess,
+                        statusCode = OK,
+                        message = response.message,
+                        data = response.data,
+                        errors = response.errors
+                    )
+                )
+            } else {
+                Resource.Error(response.message)
+            }
+        } catch (e: IOException){
+            Timber.e("Network error: ${e.message}")
+            return Resource.Error("Something went wrong. Try again later")
+        } catch (e: Exception){
+            Timber.e("Unknown error: ${e.message}")
+            return Resource.Error("Something went wrong. Try again later")
+        }
+    }
+    override suspend fun deleteEmployee(employeeId: UUID): Resource<ResponseDto<String>> {
+        if (!networkUtils.isNetworkAvailable()) {
+            return Resource.Error("No internet connection. Try again later.")
+        }
+        try {
+            val response = adminServiceApi.deleteEmployee(employeeId)
+            return if (response.isSuccess) {
+                if (employeeDao.getEmployeeById(employeeId) != null){
+                    employeeDao.deleteEmployeeById(employeeId)
+                }
+                Resource.Success(
+                    ResponseDto(
+                        isSuccess = response.isSuccess,
+                        statusCode = OK,
+                        message = response.message,
+                        data = response.data,
+                        errors = response.errors
+                    )
+                )
             } else {
                 Resource.Error(response.message)
             }
@@ -632,38 +713,15 @@ class AdminRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getDepartmentById(departmentId: String): Resource<ResponseDto<Department>> {
-        TODO("Not yet implemented")
-    }
 
     override suspend fun updateDepartment(
         departmentId: String,
         title: String
-    ): Resource<ResponseDto<String>> {
+    ): Resource<String> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun deleteDepartment(departmentId: String): Resource<ResponseDto<String>> {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun getDepartmentEmployees(
-        departmentId: String,
-        page: Int,
-        limit: Int,
-        search: String?,
-        sort: String?
-    ): Resource<ResponseDto<PaginatedData<Department>>> {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun getDepartmentManagers(
-        departmentId: String,
-        page: Int,
-        limit: Int,
-        search: String?,
-        sort: String?
-    ): Resource<ResponseDto<PaginatedData<Department>>> {
+    override suspend fun deleteDepartment(departmentId: String): Resource<String> {
         TODO("Not yet implemented")
     }
 
@@ -741,27 +799,5 @@ class AdminRepositoryImpl @Inject constructor(
         }.flowOn(Dispatchers.IO)
     }
 
-    override suspend fun getTaskById(taskId: UUID): Resource<ResponseDto<Task>> {
-        TODO("Not yet implemented")
-    }
 
-    override suspend fun getEmployeeTasks(
-        employeeId: UUID,
-        page: Int,
-        limit: Int,
-        search: String?,
-        sort: String?
-    ): Resource<ResponseDto<PaginatedData<Task>>> {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun getManagerTasks(
-        managerId: UUID,
-        page: Int,
-        limit: Int,
-        search: String?,
-        sort: String?
-    ): Resource<ResponseDto<PaginatedData<Task>>> {
-        TODO("Not yet implemented")
-    }
 }

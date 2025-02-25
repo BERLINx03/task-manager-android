@@ -141,7 +141,7 @@ fun NavigationDrawer(
                     icon = { Icon(Icons.Default.Group, "Employees") },
                     label = { Text("Employees") },
                     selected = employeesSelected,
-                    onClick = { /* Handle employees navigation */ },
+                    onClick = { navController.navigate(Screens.AppScreens.Employees.route) },
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
 

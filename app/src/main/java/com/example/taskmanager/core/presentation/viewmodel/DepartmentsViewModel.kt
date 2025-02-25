@@ -6,11 +6,13 @@ import com.example.taskmanager.admin.domain.repository.AdminRepository
 import com.example.taskmanager.auth.data.local.TokenDataStore
 import com.example.taskmanager.core.data.local.datastore.UserInfoDataStore
 import com.example.taskmanager.core.data.remote.SharedApiService
+import com.example.taskmanager.core.domain.model.Department
 import com.example.taskmanager.core.domain.repository.SharedRepository
 import com.example.taskmanager.core.presentation.intents.DepartmentIntents
 import com.example.taskmanager.core.presentation.state.DepartmentsState
 import com.example.taskmanager.core.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,6 +20,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
@@ -320,8 +323,38 @@ class DepartmentsViewModel @Inject constructor(
     }
 
     fun addDepartment(title: String) {
-        //TODO
+        viewModelScope.launch {
+            when (val result = addDepartmentOnIO(title)) {
+                is Resource.Error -> {
+                    _departmentsState.update {
+                        it.copy(
+                            errorMessage = result.message,
+                            isLoading = false
+                        )
+                    }
+                }
+                is Resource.Loading -> {
+                    _departmentsState.update { current ->
+                        current.copy(
+                            isLoading = result.isLoading
+                        )
+                    }
+                }
+                is Resource.Success -> {
+                    _departmentsState.update {
+                        it.copy(
+                            isLoading = false
+                        )
+                    }
+                }
+            }
+        }
     }
+
+    private suspend fun addDepartmentOnIO(title: String): Resource<Department> =
+        withContext(Dispatchers.IO){
+            adminRepository.addDepartment(title)
+        }
 
     private fun calculateTotalPages(totalCount: Int, pageSize: Int): Int {
         return if (totalCount == 0 || pageSize == 0) {

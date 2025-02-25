@@ -15,5 +15,6 @@ data class ProfileState(
     val hasNextPage: Boolean = false,
     val hasPreviousPage: Boolean = false,
     val isLoading: Boolean = false,
-    val errorMessage: String? = ""
+    val errorMessage: String? = "",
+    val deletedSuccessfully: Boolean = false
 )

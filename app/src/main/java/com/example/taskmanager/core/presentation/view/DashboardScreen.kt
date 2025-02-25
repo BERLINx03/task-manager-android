@@ -54,6 +54,7 @@ import com.example.taskmanager.core.presentation.viewmodel.DashboardViewModel
 import com.example.taskmanager.core.utils.NavigationDrawer
 import com.example.taskmanager.core.utils.Screens
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 /**
  * @author Abdallah Elsokkary
@@ -212,12 +213,13 @@ fun DashboardContent(
                         title = "Employees",
                         count = state.employeesCount,
                         backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        navController = { navController.navigate(Screens.AppScreens.Managers.route) }
+                        navController = { navController.navigate(Screens.AppScreens.Employees.route) }
                     )
                 }
 
                 // Task Card
                 item {
+                    Timber.i("Tasks Count: ${state.tasksCount}")
                     StatisticCard(
                         icon = Icons.Default.Task,
                         title = "Tasks",

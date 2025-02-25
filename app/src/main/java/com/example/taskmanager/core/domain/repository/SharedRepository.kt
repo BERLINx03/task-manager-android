@@ -47,4 +47,6 @@ interface SharedRepository {
     suspend fun getTaskById(taskId: UUID): Resource<Task>
     // All
     suspend fun getDepartmentById(departmentId: UUID): Resource<Department>
+    suspend fun getManagersInDepartment(departmentId: UUID, page: Int, limit: Int, search: String?, sort: String?, forceFetchFromRemote: Boolean): Flow<Resource<PaginatedData<ManagerAndEmployee>>>
+    suspend fun getEmployeesInDepartment(departmentId: UUID, page: Int, limit: Int, search: String?, sort: String?, forceFetchFromRemote: Boolean): Flow<Resource<PaginatedData<ManagerAndEmployee>>>
 }

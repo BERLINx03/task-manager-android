@@ -70,6 +70,7 @@ import com.example.taskmanager.core.domain.model.ManagerAndEmployee
 import com.example.taskmanager.core.presentation.intents.EmployeesIntents
 import com.example.taskmanager.core.presentation.viewmodel.DepartmentsViewModel
 import com.example.taskmanager.core.presentation.viewmodel.EmployeesViewModel
+import com.example.taskmanager.core.utils.ErrorBox
 import com.example.taskmanager.core.utils.NavigationDrawer
 import com.example.taskmanager.core.utils.PermissionDialog
 import com.example.taskmanager.core.utils.Screens
@@ -342,58 +343,10 @@ fun EmployeesScreen(
 
                     state.errorMessage?.let {
                         if (it.isNotEmpty()) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth(0.8f)
-                                        .padding(16.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = colorScheme.errorContainer
-                                    ),
-                                    shape = RoundedCornerShape(12.dp)
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(20.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.Center
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Warning,
-                                            contentDescription = "Error",
-                                            tint = colorScheme.error,
-                                            modifier = Modifier.size(28.dp)
-                                        )
-                                        Spacer(modifier = Modifier.height(12.dp))
-                                        Text(
-                                            text = it,
-                                            color = colorScheme.onErrorContainer,
-                                            fontSize = 14.sp,
-                                            textAlign = TextAlign.Center
-                                        )
-                                        Spacer(modifier = Modifier.height(16.dp))
-                                        Button(
-                                            onClick = {
-                                                employeesViewModel.onIntent(EmployeesIntents.Refresh)
-                                            },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = colorScheme.error
-                                            ),
-                                            shape = RoundedCornerShape(20.dp)
-                                        ) {
-                                            Icon(
-                                                Icons.Default.Refresh,
-                                                contentDescription = "Retry",
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text("Retry")
-                                        }
-                                    }
-                                }
-                            }
+                            ErrorBox(
+                                error = it,
+                                onClick = { employeesViewModel.onIntent(EmployeesIntents.Refresh) }
+                            )
                         }
                     }
 

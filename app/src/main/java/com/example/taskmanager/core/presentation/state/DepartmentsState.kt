@@ -5,6 +5,8 @@ import com.example.taskmanager.core.domain.model.User
 
 
 data class DepartmentsState(
+    val sortOption: String = "title_asc",
+    val title: String = "",
     val user: User? = null,
     val isRefreshing: Boolean = false,
     val departments: List<Department> = emptyList(),

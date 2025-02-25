@@ -143,6 +143,30 @@ fun ResponseDto.ManagerAndEmployeeResponse.toManagerEntity(): ManagerEntity {
     )
 }
 
+fun ManagerAndEmployee.toManagerEntity(): ManagerEntity {
+    return ManagerEntity(
+        firstName = firstName,
+        lastName = lastName,
+        phoneNumber = phoneNumber,
+        gender = gender,
+        birthDate = birthDate,
+        departmentId = departmentId,
+        id = id
+    )
+}
+
+fun ManagerAndEmployee.toEmployeeEntity(): EmployeeEntity {
+    return EmployeeEntity(
+        firstName = firstName,
+        lastName = lastName,
+        phoneNumber = phoneNumber,
+        gender = gender,
+        birthDate = birthDate,
+        departmentId = departmentId,
+        id = id
+    )
+}
+
 fun ResponseDto.ManagerAndEmployeeResponse.toEmployeeEntity(): EmployeeEntity {
     return EmployeeEntity(
         firstName = firstName,

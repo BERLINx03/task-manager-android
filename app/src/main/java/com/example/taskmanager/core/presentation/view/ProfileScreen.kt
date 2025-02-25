@@ -63,6 +63,7 @@ import com.example.taskmanager.core.domain.model.Task
 import com.example.taskmanager.core.presentation.intents.ProfileIntents
 import com.example.taskmanager.core.presentation.viewmodel.ProfileViewModel
 import com.example.taskmanager.core.utils.DeleteManagerDialog
+import com.example.taskmanager.core.utils.Screens
 import java.util.UUID
 
 /**
@@ -226,7 +227,19 @@ fun ProfileScreen(
                 }
 
                 items(state.tasks.size) { index ->
-                    TaskCard(task = state.tasks[index])
+                    val task = state.tasks[index]
+                    TaskCardinProfile(
+                        task = task,
+                        onClick = {
+                            if (userRole == "Admin" || userRole == "Manager" || userRole == "Employee") {
+                                navController.navigate(
+                                    Screens.AppScreens.TaskDetails.route
+                                        .replace("{taskId}", task.id.toString())
+                                        .replace("{role}", userRole)
+                                )
+                            }
+                        }
+                    )
                 }
 
                 if (state.tasks.isEmpty() && !state.isLoading) {
@@ -243,6 +256,7 @@ fun ProfileScreen(
                 )
             }
         }
+
         DeleteManagerDialog(
             showDialog = showDeleteDialog,
             onDismiss = { showDeleteDialog = false },
@@ -316,7 +330,7 @@ private fun ProfileDetailItem(
 }
 
 @Composable
-private fun TaskCard(task: Task) {
+private fun TaskCardinProfile(task: Task, onClick: () -> Unit) {
     val colorScheme = MaterialTheme.colorScheme
 
     val (statusText, statusColor) = when (task.status) {
@@ -334,6 +348,7 @@ private fun TaskCard(task: Task) {
     }
 
     Card(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),

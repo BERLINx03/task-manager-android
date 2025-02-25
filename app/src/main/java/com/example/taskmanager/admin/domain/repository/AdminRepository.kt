@@ -6,6 +6,7 @@ import com.example.taskmanager.core.domain.model.Department
 import com.example.taskmanager.core.domain.model.PaginatedData
 import com.example.taskmanager.core.domain.model.Task
 import com.example.taskmanager.auth.data.remote.reponsemodels.ResponseDto
+import com.example.taskmanager.core.data.remote.dto.DepartmentRequestDto
 import com.example.taskmanager.core.utils.Resource
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
@@ -39,7 +40,7 @@ interface AdminRepository {
 
     suspend fun deleteEmployee(employeeId: UUID): Resource<ResponseDto<String>>
 
-    suspend fun addDepartment(title: String): Resource<Department>
+    suspend fun addDepartment(title: DepartmentRequestDto): Resource<Department>
 
     suspend fun getDepartments(
         page: Int,
@@ -48,10 +49,10 @@ interface AdminRepository {
         sort: String?,
         forceFetchFromRemote: Boolean,
         isRefreshing: Boolean
-    ): Flow<Resource<ResponseDto<PaginatedData<Department>>>>
+    ): Flow<Resource<PaginatedData<Department>>>
 
-    suspend fun updateDepartment(departmentId: String, title: String): Resource<String>
-    suspend fun deleteDepartment(departmentId: String): Resource<String>
+    suspend fun updateDepartment(departmentId: UUID, updateDepartmentRequestDto: DepartmentRequestDto): Resource<ResponseDto<String>>
+    suspend fun deleteDepartment(departmentId: UUID): Resource<ResponseDto<String>>
     suspend fun getCachedDepartmentsCount(): Resource<Int>
     suspend fun getDepartmentsCountFromNetwork(): Flow<Resource<Int>>
     suspend fun getCachedTasksCount(): Resource<Int>

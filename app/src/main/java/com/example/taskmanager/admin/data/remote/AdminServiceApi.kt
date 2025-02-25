@@ -2,6 +2,7 @@ package com.example.taskmanager.admin.data.remote
 
 import com.example.taskmanager.admin.data.remote.dto.UpdateAdminRequestDto
 import com.example.taskmanager.auth.data.remote.reponsemodels.ResponseDto
+import com.example.taskmanager.core.data.remote.dto.DepartmentRequestDto
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -47,8 +48,8 @@ interface AdminServiceApi {
 
     @POST("/Department")
     suspend fun addDepartment(
-        @Body title: String
-    ): ResponseDto<ResponseDto.DepartmentResponse>
+        @Body departmentRequestDto: DepartmentRequestDto
+    ): ResponseDto<UUID>
 
 
     @GET("/Tasks")
@@ -62,8 +63,8 @@ interface AdminServiceApi {
     @PUT("/Department/{DepartmentId}")
     suspend fun updateDepartment(
         @Path("DepartmentId") departmentId: UUID,
-        @Body title: String
-    ): ResponseDto<UUID>
+        @Body updateDepartmentRequestDto: DepartmentRequestDto
+    ): ResponseDto<String>
 
     @DELETE("/Department/{DepartmentId}")
     suspend fun deleteDepartment(

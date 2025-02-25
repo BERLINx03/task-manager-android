@@ -30,7 +30,7 @@ interface SharedApiService{
 
     //(all)
     @GET("/Department/{DepartmentId}/Employees")
-    suspend fun getDepartmentEmployees(
+    suspend fun getEmployeesInDepartment(
         @Path("DepartmentId") departmentId: UUID,
         @Query("Page") page: Int,
         @Query("Limit") limit: Int,
@@ -40,7 +40,7 @@ interface SharedApiService{
 
     //(All)
     @GET("/Department/{DepartmentId}/Managers")
-    suspend fun getDepartmentManagers(
+    suspend fun getManagersInDepartment(
         @Path("DepartmentId") departmentId: UUID,
         @Query("Page") page: Int,
         @Query("Limit") limit: Int,

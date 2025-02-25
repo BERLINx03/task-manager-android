@@ -27,8 +27,8 @@ import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpAdminViewModel
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpEmployeeViewModel
 import com.example.taskmanager.auth.presentation.viewmodel.SignUpManagerViewModel
-import com.example.taskmanager.core.presentation.state.EmployeesState
 import com.example.taskmanager.core.presentation.view.DashboardScreen
+import com.example.taskmanager.core.presentation.view.DepartmentDetailsScreen
 import com.example.taskmanager.core.presentation.view.DepartmentsScreen
 import com.example.taskmanager.core.presentation.view.EmployeesScreen
 import com.example.taskmanager.core.presentation.view.ManagersScreen
@@ -36,6 +36,7 @@ import com.example.taskmanager.core.presentation.view.ProfileScreen
 import com.example.taskmanager.core.presentation.view.TaskDetailsScreen
 import com.example.taskmanager.core.presentation.view.TasksScreen
 import com.example.taskmanager.core.presentation.viewmodel.DashboardViewModel
+import com.example.taskmanager.core.presentation.viewmodel.DepartmentDetailsViewModel
 import com.example.taskmanager.core.presentation.viewmodel.DepartmentsViewModel
 import com.example.taskmanager.core.presentation.viewmodel.EmployeesViewModel
 import com.example.taskmanager.core.presentation.viewmodel.ManagersViewModel
@@ -176,10 +177,19 @@ class TaskManagerActivity : ComponentActivity() {
                                 departmentsViewModel = departmentViewModel,
                                 loginViewModel = loginViewModel,
                                 navController = navController,
-                                innerPadding = innerPadding,
-                            ) {
+                            )
+                        }
 
-                            }
+                        animatedComposable(
+                            route = Screens.AppScreens.DepartmentDetails.route,
+                            arguments = listOf(
+                                navArgument("departmentId") { type = NavType.StringType },
+                            )) {
+                            val departmentDetailsViewModel = hiltViewModel<DepartmentDetailsViewModel>()
+                            DepartmentDetailsScreen(
+                                navController = navController,
+                                departmentDetailsViewModel = departmentDetailsViewModel,
+                            )
                         }
 
                         animatedComposable(Screens.AppScreens.Tasks.route) {

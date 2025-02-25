@@ -193,8 +193,8 @@ fun ManagersScreen(
                                         if (userRole == "Admin" || userRole == "Manager") {
                                             navController.navigate(
                                                 Screens.AppScreens.Profile.route
-                                                    .replace("{userId}",manager.id.toString())
-                                                    .replace("{role}","Manager")
+                                                    .replace("{userId}", manager.id.toString())
+                                                    .replace("{role}", "Manager")
                                             )
                                         } else {
                                             showPermissionDialog.value = true

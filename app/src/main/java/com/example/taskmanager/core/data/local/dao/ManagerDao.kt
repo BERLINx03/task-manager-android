@@ -49,6 +49,29 @@ interface ManagerDao {
 """)
     fun getTotalCount(search: String?): Int
 
+    @Query("""
+    SELECT COUNT(*) FROM managers 
+    WHERE (:departmentId IS NULL OR departmentId = :departmentId)
+""")
+    fun countManagersByDepartment(
+        departmentId: UUID
+    ): Flow<Int>
+
+    @Query("""
+    SELECT * FROM managers 
+    WHERE (:departmentId IS NULL OR departmentId = :departmentId)
+      AND (:search IS NULL OR
+           firstName LIKE '%' || :search || '%' OR
+           lastName LIKE '%' || :search || '%')
+    LIMIT :limit OFFSET ((:page - 1) * :limit)
+""")
+    fun getPagedManagersByDepartment(
+        departmentId: UUID,
+        search: String?,
+        page: Int,
+        limit: Int,
+    ): Flow<List<ManagerEntity>>
+
     @Query("SELECT * FROM managers WHERE id = :managerId")
     suspend fun getAllManagers(managerId: UUID): ManagerEntity
 

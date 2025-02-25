@@ -5,8 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.taskmanager.admin.domain.repository.AdminRepository
 import com.example.taskmanager.auth.data.local.TokenDataStore
 import com.example.taskmanager.core.data.local.datastore.UserInfoDataStore
-import com.example.taskmanager.core.data.remote.SharedApiService
+import com.example.taskmanager.core.data.remote.dto.DepartmentRequestDto
 import com.example.taskmanager.core.domain.model.Department
+import com.example.taskmanager.core.domain.model.PaginatedData
 import com.example.taskmanager.core.domain.repository.SharedRepository
 import com.example.taskmanager.core.presentation.intents.DepartmentIntents
 import com.example.taskmanager.core.presentation.state.DepartmentsState
@@ -14,10 +15,12 @@ import com.example.taskmanager.core.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -42,6 +45,9 @@ class DepartmentsViewModel @Inject constructor(
     val userRole = userRoleDataStore.userRole
     private val pageSize = 10
 
+    private val _addedSuccessfully = MutableSharedFlow<Unit>()
+    val addedSuccessfully = _addedSuccessfully.asSharedFlow()
+
     init {
         loadDepartments(false)
         viewModelScope.launch {
@@ -57,18 +63,18 @@ class DepartmentsViewModel @Inject constructor(
 
     fun onIntent(intent: DepartmentIntents) {
         when (intent) {
-            DepartmentIntents.OnTitleChanged ->{
-                //TODO
+            is DepartmentIntents.OnTitleChanged -> {
+                updateTitle(intent.title)
             }
+
             is DepartmentIntents.AddDepartment -> {
-                //TODO
+                addDepartment(intent.title)
             }
+
             is DepartmentIntents.OnSearchQueryChange -> {
                 updateSearchQuery(intent.query)
             }
-            is DepartmentIntents.Navigating -> {
-                //TODO
-            }
+
             is DepartmentIntents.LoadDepartments -> loadDepartments(forceFetchFromRemote = intent.forceFetchFromRemote)
             DepartmentIntents.LoadNextPage -> loadNextPage()
             DepartmentIntents.LoadPreviousPage -> loadPreviousPage()
@@ -83,47 +89,32 @@ class DepartmentsViewModel @Inject constructor(
                     }
                 }
             }
+
+            is DepartmentIntents.SetSortOption -> setSortOption(intent.sortOption)
         }
     }
 
 
-    fun getDepartmentById(id: UUID) {
-        _departmentsState.update { it.copy(isLoading = true) }
-        viewModelScope.launch {
-            when (val result = sharedRepository.getDepartmentById(id)) {
-                is Resource.Error -> {
-                    _departmentsState.update {
-                        it.copy(
-                            errorMessage = result.message,
-                            isLoading = false
-                        )
-                    }
-                }
-                is Resource.Loading -> {
-                    _departmentsState.update { current ->
-                        current.copy(
-                            isLoading = result.isLoading
-                        )
-                    }
-                }
-                is Resource.Success -> {
-                    _departmentsState.update {
-                        it.copy(
-                            selectedDepartment = result.data,
-                            isLoading = false
-                        )
-                    }
-                }
-            }
+    private fun setSortOption(sortOption: String) {
+        if (_departmentsState.value.sortOption == sortOption) return
+
+        _departmentsState.update {
+            it.copy(sortOption = sortOption)
         }
+        loadDepartments(forceFetchFromRemote = false)
     }
+
+    private fun updateTitle(title: String) {
+        _departmentsState.update { it.copy(title = title) }
+    }
+
     private fun updateSearchQuery(query: String) {
         if (_departmentsState.value.isLoading) return
         _departmentsState.update { state ->
             state.copy(
                 searchQuery = query.takeIf { query ->
-                query.isNotBlank()
-            })
+                    query.isNotBlank()
+                })
         }
         loadDepartments(forceFetchFromRemote = false)
     }
@@ -136,39 +127,44 @@ class DepartmentsViewModel @Inject constructor(
         viewModelScope.launch {
             val currentState = _departmentsState.value
             try {
-                adminRepository.getDepartments(
-                    page = 1,
-                    limit = pageSize,
-                    search = currentState.searchQuery,
-                    sort = null,
-                    forceFetchFromRemote = forceFetchFromRemote,
-                    isRefreshing = forceFetchFromRemote
-                ).collectLatest { resource ->
-                    when (resource) {
-                        is Resource.Error -> {
-                            _departmentsState.update {
-                                it.copy(
-                                    errorMessage = resource.message,
-                                    isLoading = false
-                                )
+                getDepartmentsOnIO(
+                    1,
+                    pageSize,
+                    currentState.searchQuery,
+                    _departmentsState.value.sortOption,
+                    forceFetchFromRemote,
+                    forceFetchFromRemote
+                )
+                    .collectLatest { resource ->
+                        when (resource) {
+                            is Resource.Error -> {
+                                _departmentsState.update {
+                                    it.copy(
+                                        errorMessage = resource.message,
+                                        isLoading = false
+                                    )
+                                }
+                                Timber.e("Error loading departments: ${resource.message}")
                             }
-                            Timber.e("Error loading departments: ${resource.message}")
-                        }
-                        is Resource.Loading -> {
-                            _departmentsState.update { current ->
-                                current.copy(
-                                    isLoading = resource.isLoading
-                                )
+
+                            is Resource.Loading -> {
+                                _departmentsState.update { current ->
+                                    current.copy(
+                                        isLoading = resource.isLoading
+                                    )
+                                }
                             }
-                        }
-                        is Resource.Success -> {
-                            val departments = resource.data.data
-                            if (departments != null) {
+
+                            is Resource.Success -> {
+                                val departments = resource.data
                                 _departmentsState.update {
                                     it.copy(
                                         departments = departments.items,
                                         currentPage = departments.page,
-                                        totalPages = calculateTotalPages(departments.totalCount, departments.pageSize),
+                                        totalPages = calculateTotalPages(
+                                            departments.totalCount,
+                                            departments.pageSize
+                                        ),
                                         hasNextPage = departments.hasNextPage,
                                         hasPreviousPage = departments.hasPreviousPage,
                                         errorMessage = null,
@@ -178,31 +174,32 @@ class DepartmentsViewModel @Inject constructor(
                             }
                         }
                     }
-                }
             } catch (e: Exception) {
-                _departmentsState.update { it.copy(
-                    errorMessage = "Failed to load departments: ${e.message}",
-                    isLoading = false
-                ) }
+                _departmentsState.update {
+                    it.copy(
+                        errorMessage = "Failed to load departments: ${e.message}",
+                        isLoading = false
+                    )
+                }
                 Timber.e(e, "Unexpected error in loadDepartments")
             }
         }
     }
 
-    fun loadNextPage() {
+    private fun loadNextPage() {
         if (!_departmentsState.value.hasNextPage || _departmentsState.value.isLoading) return
 
         _departmentsState.update { it.copy(isLoading = true) }
 
         viewModelScope.launch {
             try {
-                adminRepository.getDepartments(
-                    page = _departmentsState.value.currentPage + 1,
-                    limit = pageSize,
-                    search = _departmentsState.value.searchQuery,
-                    sort = null,
-                    forceFetchFromRemote = false,
-                    isRefreshing = false
+                getDepartmentsOnIO(
+                    _departmentsState.value.currentPage + 1,
+                    pageSize,
+                    _departmentsState.value.searchQuery,
+                    _departmentsState.value.sortOption,
+                    false,
+                    false
                 ).collectLatest { resource ->
                     when (resource) {
                         is Resource.Error -> {
@@ -214,49 +211,44 @@ class DepartmentsViewModel @Inject constructor(
                             }
                             Timber.e("Error loading next page of departments: ${resource.message}")
                         }
+
                         is Resource.Loading -> {
-                            _departmentsState.update { current ->
-                                current.copy(
+                            _departmentsState.update {
+                                it.copy(
                                     isLoading = resource.isLoading
                                 )
                             }
                         }
+
                         is Resource.Success -> {
-                            val departments = resource.data.data
-                            if (departments != null) {
-                                _departmentsState.update {
-                                    it.copy(
-                                        departments = departments.items,
-                                        currentPage = departments.page,
-                                        hasNextPage = departments.hasNextPage,
-                                        hasPreviousPage = departments.hasPreviousPage,
-                                        errorMessage = null,
-                                        isLoading = false
-                                    )
-                                }
-                            } else {
-                                _departmentsState.update {
-                                    it.copy(
-                                        errorMessage = "No departments found",
-                                        isLoading = false
-                                    )
-                                }
+                            val departments = resource.data
+                            _departmentsState.update {
+                                it.copy(
+                                    departments = departments.items,
+                                    currentPage = departments.page,
+                                    hasNextPage = departments.hasNextPage,
+                                    hasPreviousPage = departments.hasPreviousPage,
+                                    errorMessage = null,
+                                    isLoading = false
+                                )
                             }
                         }
                     }
                 }
             } catch (e: Exception) {
-                _departmentsState.update { it.copy(
-                    errorMessage = "Failed to load next page: ${e.message}",
-                    isLoading = false
-                ) }
+                _departmentsState.update {
+                    it.copy(
+                        errorMessage = "Failed to load next page: ${e.message}",
+                        isLoading = false
+                    )
+                }
                 Timber.e(e, "Unexpected error in loadNextPage")
             }
         }
 
     }
 
-    fun loadPreviousPage() {
+    private fun loadPreviousPage() {
 
         if (!_departmentsState.value.hasPreviousPage || _departmentsState.value.isLoading) return
 
@@ -268,34 +260,36 @@ class DepartmentsViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val response = adminRepository.getDepartments(
-                    page = previousPage,
-                    limit = pageSize,
-                    search = _departmentsState.value.searchQuery,
-                    sort = null,
-                    forceFetchFromRemote = false,
-                    isRefreshing = false
-                ).collectLatest { resource ->
-                    when (resource){
-                        is Resource.Error -> {
-                            _departmentsState.update {
-                                it.copy(
-                                    errorMessage = resource.message,
-                                    isLoading = false
-                                )
+                getDepartmentsOnIO(
+                    previousPage,
+                    pageSize,
+                    _departmentsState.value.searchQuery,
+                    _departmentsState.value.sortOption,
+                    false,
+                    false
+                )
+                    .collectLatest { resource ->
+                        when (resource) {
+                            is Resource.Error -> {
+                                _departmentsState.update {
+                                    it.copy(
+                                        errorMessage = resource.message,
+                                        isLoading = false
+                                    )
+                                }
+                                Timber.e("Error loading previous page of departments: ${resource.message}")
                             }
-                            Timber.e("Error loading previous page of departments: ${resource.message}")
-                        }
-                        is Resource.Loading -> {
-                            _departmentsState.update { current ->
-                                current.copy(
-                                    isLoading = resource.isLoading
-                                )
+
+                            is Resource.Loading -> {
+                                _departmentsState.update { current ->
+                                    current.copy(
+                                        isLoading = resource.isLoading
+                                    )
+                                }
                             }
-                        }
-                        is Resource.Success -> {
-                            val departments = resource.data.data
-                            if (departments != null) {
+
+                            is Resource.Success -> {
+                                val departments = resource.data
                                 _departmentsState.update {
                                     it.copy(
                                         departments = departments.items,
@@ -307,21 +301,21 @@ class DepartmentsViewModel @Inject constructor(
                                     )
                                 }
                             }
-
                         }
                     }
-                }
             } catch (e: Exception) {
-                _departmentsState.update { it.copy(
-                    errorMessage = "Failed to load previous page: ${e.message}",
-                    isLoading = false
-                ) }
+                _departmentsState.update {
+                    it.copy(
+                        errorMessage = "Failed to load previous page: ${e.message}",
+                        isLoading = false
+                    )
+                }
                 Timber.e(e, "Unexpected error in loadPreviousPage")
             }
         }
 
     }
-
+    // Done 100%
     fun addDepartment(title: String) {
         viewModelScope.launch {
             when (val result = addDepartmentOnIO(title)) {
@@ -333,6 +327,7 @@ class DepartmentsViewModel @Inject constructor(
                         )
                     }
                 }
+
                 is Resource.Loading -> {
                     _departmentsState.update { current ->
                         current.copy(
@@ -340,20 +335,41 @@ class DepartmentsViewModel @Inject constructor(
                         )
                     }
                 }
+
                 is Resource.Success -> {
                     _departmentsState.update {
                         it.copy(
                             isLoading = false
                         )
                     }
+                    _addedSuccessfully.emit(Unit)
                 }
             }
         }
     }
 
+
+    // helpers to prevent memory lacking
+    private suspend fun getDepartmentsOnIO(page: Int, limit: Int, search: String?, sort: String?, forceFetchFromRemote: Boolean, isRefreshing: Boolean): Flow<Resource<PaginatedData<Department>>> {
+        return withContext(Dispatchers.IO) {
+            adminRepository.getDepartments(
+                page,
+                limit,
+                search,
+                sort,
+                forceFetchFromRemote,
+                isRefreshing
+            )
+        }
+    }
+    private suspend fun getDepartmentOnIO(departmentId: UUID): Resource<Department> {
+        return withContext(Dispatchers.IO) {
+            sharedRepository.getDepartmentById(departmentId)
+        }
+    }
     private suspend fun addDepartmentOnIO(title: String): Resource<Department> =
-        withContext(Dispatchers.IO){
-            adminRepository.addDepartment(title)
+        withContext(Dispatchers.IO) {
+            adminRepository.addDepartment(DepartmentRequestDto(title))
         }
 
     private fun calculateTotalPages(totalCount: Int, pageSize: Int): Int {

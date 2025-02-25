@@ -27,7 +27,7 @@ import javax.inject.Inject
 class ProfileViewModel @Inject constructor(
     private val sharedRepository: SharedRepository,
     private val adminRepository: AdminRepository,
-    private val userRole: TokenDataStore,
+    userRole: TokenDataStore,
     stateHandle: SavedStateHandle
 ) : ViewModel() {
     val userId = stateHandle.get<String>("userId") ?: ""
@@ -53,7 +53,7 @@ class ProfileViewModel @Inject constructor(
                     try {
                         loadProfile()
                         loadTasks(true)
-                        delay(500)
+                        delay(300)
                     } finally {
                         _state.update { it.copy(isRefreshing = false) }
                     }
@@ -212,6 +212,7 @@ class ProfileViewModel @Inject constructor(
     }
 
     private fun loadManagerProfile() {
+        Timber.d("loadManagerProfile() has started execution")
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
             when (val result = sharedRepository.getManagerById(UUID.fromString(userId))) {

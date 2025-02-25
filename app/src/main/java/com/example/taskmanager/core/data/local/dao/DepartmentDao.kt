@@ -16,24 +16,19 @@ import java.util.UUID
 
 @Dao
 interface DepartmentDao {
-    @Query("""
+    @Query(
+        """
     SELECT * FROM departments 
-    WHERE (:search IS NULL OR 
-          title LIKE '%' || :search || '%' )
-    ORDER BY 
-    CASE :sort
-        WHEN 'name_asc' THEN title 
-        WHEN 'date_asc' THEN lastSyncTimestamp 
-        WHEN 'date_desc' THEN lastSyncTimestamp
-        ELSE title
-    END,
-    CASE :sort
-        WHEN 'name_desc' THEN 'DESC'
-        WHEN 'date_desc' THEN 'DESC'
-        ELSE 'ASC'
-    END
-    LIMIT :limit OFFSET ((:page - 1) * :limit)  
-""")
+    WHERE (:search IS NULL OR title LIKE '%' || :search || '%' COLLATE NOCASE)
+    ORDER BY
+    CASE WHEN :sort = 'title_asc' THEN title END COLLATE NOCASE ASC,
+    CASE WHEN :sort = 'title_desc' THEN title END COLLATE NOCASE DESC,
+    CASE WHEN :sort = 'date_asc' THEN lastSyncTimestamp END ASC,
+    CASE WHEN :sort = 'date_desc' THEN lastSyncTimestamp END DESC,
+    CASE WHEN :sort NOT IN ('title_asc', 'title_desc', 'date_asc', 'date_desc') THEN title END COLLATE NOCASE ASC
+    LIMIT :limit OFFSET ((:page - 1) * :limit)
+    """
+    )
     fun getPagedDepartments(
         page: Int,
         limit: Int,
@@ -41,11 +36,11 @@ interface DepartmentDao {
         sort: String? = null
     ): Flow<List<DepartmentEntity>>
 
-    @Query("""
-    SELECT COUNT(*) FROM departments
-    WHERE (:search IS NULL OR 
-          title LIKE '%' || :search || '%' )
-""")
+    @Query(
+        """SELECT COUNT(*) FROM departments
+            WHERE (:search IS NULL OR 
+            title LIKE '%' || :search || '%' COLLATE NOCASE)"""
+    )
     fun getDepartmentsCountFlow(search: String? = null): Flow<Int>
 
     @Query("SELECT * FROM departments")

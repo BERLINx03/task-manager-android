@@ -41,7 +41,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
@@ -253,7 +252,7 @@ fun DashboardContent(
 
         // Recent Tasks Items
         items(recentTasks) { task ->
-            TaskCard(task = task)
+            TaskCardinTasks(task = task)
         }
     }
 }
@@ -306,7 +305,7 @@ fun StatisticCard(
 }
 
 @Composable
-private fun TaskCard(task: TaskItem) {
+private fun TaskCardinTasks(task: TaskItem) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(

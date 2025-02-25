@@ -5,8 +5,8 @@ import com.example.taskmanager.core.data.local.database.TaskManagerDatabase
 import com.example.taskmanager.core.data.mappers.toDepartment
 import com.example.taskmanager.core.data.mappers.toDepartmentEntity
 import com.example.taskmanager.core.data.mappers.toEmployeeEntity
-import com.example.taskmanager.core.data.mappers.toManagerEntity
 import com.example.taskmanager.core.data.mappers.toManagerAndEmployee
+import com.example.taskmanager.core.data.mappers.toManagerEntity
 import com.example.taskmanager.core.data.mappers.toTask
 import com.example.taskmanager.core.data.mappers.toTaskEntity
 import com.example.taskmanager.core.data.remote.SharedApiService
@@ -18,8 +18,10 @@ import com.example.taskmanager.core.domain.repository.SharedRepository
 import com.example.taskmanager.core.utils.HttpStatusCodes
 import com.example.taskmanager.core.utils.NetworkUtils
 import com.example.taskmanager.core.utils.Resource
+import com.example.taskmanager.core.utils.getIOExceptionMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -35,10 +37,11 @@ import javax.inject.Inject
  */
 class SharedRepositoryImpl @Inject constructor(
     private val sharedApiService: SharedApiService,
-    private val taskManagerDatabase: TaskManagerDatabase,
+    taskManagerDatabase: TaskManagerDatabase,
     private val networkUtils: NetworkUtils
 ) : SharedRepository {
 
+    private val hasNetwork = networkUtils.isNetworkAvailable()
     private val managerDao = taskManagerDatabase.managerDao
     private val employeeDao = taskManagerDatabase.employeeDao
     private val departmentDao = taskManagerDatabase.departmentDao
@@ -226,6 +229,141 @@ class SharedRepositoryImpl @Inject constructor(
         }.flowOn(Dispatchers.IO)
     }
 
+    override suspend fun getManagersInDepartment(
+        departmentId: UUID,
+        page: Int,
+        limit: Int,
+        search: String?,
+        sort: String?,
+        forceFetchFromRemote: Boolean
+    ): Flow<Resource<PaginatedData<ManagerAndEmployee>>> {
+        return flow {
+            emit(Resource.Loading(true))
+            if (hasNetwork) {
+                try {
+                    val response = sharedApiService.getManagersInDepartment(departmentId, page, limit, search, sort)
+                    if (!response.isSuccess) {
+                        emit(Resource.Error("Failed to fetch data from server: ${response.message}"))
+                    } else if (response.data != null) {
+                        val managers = response.data.items.map { it.toManagerAndEmployee() }
+                        managerDao.upsertManagers(managers.map { it.toManagerEntity() })
+
+                        emit(
+                            Resource.Success(
+                                PaginatedData(
+                                    items = managers,
+                                    page = page,
+                                    pageSize = limit,
+                                    totalCount = response.data.totalCount,
+                                    hasNextPage = response.data.hasNextPage,
+                                    hasPreviousPage = response.data.hasPreviousPage
+                                )
+                            )
+                        )
+                        Timber.d("Pagination debug: page=$page, limit=$limit, count=${response.data.totalCount}, hasNext=${response.data.hasNextPage}, hasPrev=${response.data.hasPreviousPage}")
+                        return@flow
+                    }
+                } catch (e: IOException) {
+                    emit(Resource.Error(getIOExceptionMessage(e)))
+                } catch (e: Exception) {
+                    emit(Resource.Error("Something went wrong. Try again later"))
+                }
+            } else {
+                if (forceFetchFromRemote){
+                    emit(Resource.Error("No internet connection. Try again later."))
+                    return@flow
+                }
+                managerDao.getPagedManagersByDepartment(departmentId, search, page, limit)
+                    .combine(managerDao.countManagersByDepartment(departmentId)) { managers, count ->
+                        Pair(managers, count)
+                    }.collect { (managers, count) ->
+                        emit(
+                            Resource.Success(
+                                data = PaginatedData(
+                                    items = managers.map{ manager -> manager.toManagerAndEmployee() },
+                                    page = page,
+                                    pageSize = limit,
+                                    totalCount = count,
+                                    hasNextPage = (page * limit) < count,
+                                    hasPreviousPage = page > 1
+                                )
+                            )
+                        )
+                        emit(Resource.Loading(false))
+                        Timber.d("Pagination debug: page=$page, limit=$limit, count=$count, hasNext=${(page * limit) < count}, hasPrev=${page > 1}")
+                    }
+            }
+
+        }.flowOn(Dispatchers.IO)
+    }
+
+    override suspend fun getEmployeesInDepartment(
+        departmentId: UUID,
+        page: Int,
+        limit: Int,
+        search: String?,
+        sort: String?,
+        forceFetchFromRemote: Boolean
+    ): Flow<Resource<PaginatedData<ManagerAndEmployee>>> {
+        return flow {
+            emit(Resource.Loading(true))
+            if (hasNetwork) {
+                try {
+                    val response = sharedApiService.getEmployeesInDepartment(departmentId, page, limit, search, sort)
+                    if (!response.isSuccess) {
+                        emit(Resource.Error("Failed to fetch data from server: ${response.message}"))
+                    } else if (response.data != null) {
+                        val employees = response.data.items.map { it.toManagerAndEmployee() }
+                        employeeDao.upsertEmployees(employees.map { it.toEmployeeEntity() })
+
+                        emit(
+                            Resource.Success(
+                                PaginatedData(
+                                    items = employees,
+                                    page = page,
+                                    pageSize = limit,
+                                    totalCount = response.data.totalCount,
+                                    hasNextPage = response.data.hasNextPage,
+                                    hasPreviousPage = response.data.hasPreviousPage
+                                )
+                            )
+                        )
+                        Timber.d("Pagination debug: page=$page, limit=$limit, count=${response.data.totalCount}, hasNext=${response.data.hasNextPage}, hasPrev=${response.data.hasPreviousPage}")
+                        return@flow
+                    }
+                } catch (e: IOException) {
+                    emit(Resource.Error(getIOExceptionMessage(e)))
+                } catch (e: Exception) {
+                    emit(Resource.Error("Something went wrong. Try again later"))
+                }
+            } else {
+                if (forceFetchFromRemote){
+                    emit(Resource.Error("No internet connection. Try again later."))
+                    return@flow
+                }
+                employeeDao.getPagedEmployeesByDepartment(departmentId,search, page, limit)
+                    .combine(employeeDao.countEmployeesByDepartment(departmentId)) { employeeEntities, count ->
+                        Pair(employeeEntities, count)
+                    }.collect { (managers, count) ->
+                        emit(
+                            Resource.Success(
+                                data = PaginatedData(
+                                    items = managers.map{ employeeEntity -> employeeEntity.toManagerAndEmployee() },
+                                    page = page,
+                                    pageSize = limit,
+                                    totalCount = count,
+                                    hasNextPage = (page * limit) < count,
+                                    hasPreviousPage = page > 1
+                                )
+                            )
+                        )
+                        emit(Resource.Loading(false))
+                        Timber.d("Pagination debug: page=$page, limit=$limit, count=$count, hasNext=${(page * limit) < count}, hasPrev=${page > 1}")
+                    }
+            }
+
+        }.flowOn(Dispatchers.IO)
+    }
     override suspend fun getManagerById(managerId: UUID): Resource<ManagerAndEmployee> {
         try {
             val cachedManager = managerDao.getManagerById(managerId)

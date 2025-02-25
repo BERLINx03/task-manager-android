@@ -50,6 +50,29 @@ interface EmployeeDao {
     fun getTotalCount(search: String?): Int
 
 
+    @Query("""
+    SELECT * FROM employees 
+    WHERE (:departmentId IS NULL OR departmentId = :departmentId)
+      AND (:search IS NULL OR
+           firstName LIKE '%' || :search || '%' OR
+           lastName LIKE '%' || :search || '%')
+    LIMIT :limit OFFSET ((:page - 1) * :limit)
+""")
+    fun getPagedEmployeesByDepartment(
+        departmentId: UUID,
+        search: String?,
+        page: Int,
+        limit: Int,
+    ): Flow<List<EmployeeEntity>>
+
+    @Query("""
+    SELECT COUNT(*) FROM employees 
+    WHERE (:departmentId IS NULL OR departmentId = :departmentId)
+""")
+    fun countEmployeesByDepartment(
+        departmentId: UUID
+    ): Flow<Int>
+
     @Query("SELECT * FROM employees WHERE id = :employeeId")
     suspend fun getEmployeeById(employeeId: UUID): EmployeeEntity?
 

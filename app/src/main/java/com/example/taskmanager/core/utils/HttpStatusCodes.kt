@@ -25,7 +25,7 @@ fun getUserFriendlyMessage(statusCode: Int): String {
 
         HttpURLConnection.HTTP_BAD_REQUEST -> "There seems to be an issue with your request. Please check the information you've provided and try again."
 
-        HttpURLConnection.HTTP_CONFLICT -> "We couldn't complete this action because it conflicts with the current state of the resource. This might happen if someone else made changes at the same time."
+        HttpURLConnection.HTTP_CONFLICT -> "We couldn't complete this action because it conflicts with the current departmentDetailState of the resource. This might happen if someone else made changes at the same time."
 
         HttpURLConnection.HTTP_UNAUTHORIZED -> "You need to be signed in to access this feature. Please sign in and try again."
 

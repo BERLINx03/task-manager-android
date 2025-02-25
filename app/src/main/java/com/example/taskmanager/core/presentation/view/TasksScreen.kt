@@ -245,7 +245,7 @@ fun TasksScreen(
                             ) {
                                 items(state.tasks.size) { index ->
                                     val task = state.tasks[index]
-                                    TaskCard(
+                                    TaskCardinTasks(
                                         task = task,
                                         onClick = {
                                             navController.navigate(
@@ -633,7 +633,7 @@ private fun PriorityButton(
 
 // Task Card Composable
 @Composable
-fun TaskCard(
+fun TaskCardinTasks(
     task: Task,
     onClick: () -> Unit
 ) {

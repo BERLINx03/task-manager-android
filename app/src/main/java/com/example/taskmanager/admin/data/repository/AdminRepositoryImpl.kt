@@ -13,11 +13,13 @@ import com.example.taskmanager.admin.domain.repository.AdminRepository
 import com.example.taskmanager.auth.data.remote.reponsemodels.ResponseDto
 import com.example.taskmanager.core.data.local.database.TaskManagerDatabase
 import com.example.taskmanager.core.data.local.datastore.StatisticsDataStore
+import com.example.taskmanager.core.data.local.entities.DepartmentEntity
 import com.example.taskmanager.core.data.mappers.toDepartment
 import com.example.taskmanager.core.data.mappers.toDepartmentEntity
 import com.example.taskmanager.core.data.mappers.toTask
 import com.example.taskmanager.core.data.mappers.toTaskEntity
 import com.example.taskmanager.core.data.remote.SharedApiService
+import com.example.taskmanager.core.data.remote.dto.DepartmentRequestDto
 import com.example.taskmanager.core.utils.HttpStatusCodes.BAD_REQUEST
 import com.example.taskmanager.core.utils.HttpStatusCodes.CREATED
 import com.example.taskmanager.core.utils.HttpStatusCodes.FORBIDDEN
@@ -269,26 +271,26 @@ class AdminRepositoryImpl @Inject constructor(
                     .combine(adminDao.getAdminsCountFlow(search)) { admins, count ->
                         Pair(admins, count)
                     }.collect { (admins, count) ->
-                    emit(
-                        Resource.Success(
-                            ResponseDto(
-                                isSuccess = true,
-                                statusCode = OK,
-                                message = if (forceFetchFromRemote || isRefreshing)
-                                    "Updated from network" else "Loading from cache",
-                                data = PaginatedData(
-                                    items = admins.map { it.toDomain() },
-                                    page = page,
-                                    pageSize = limit,
-                                    totalCount = count,
-                                    hasNextPage = (page * limit) < count,
-                                    hasPreviousPage = page > 1
-                                ),
-                                errors = null
+                        emit(
+                            Resource.Success(
+                                ResponseDto(
+                                    isSuccess = true,
+                                    statusCode = OK,
+                                    message = if (forceFetchFromRemote || isRefreshing)
+                                        "Updated from network" else "Loading from cache",
+                                    data = PaginatedData(
+                                        items = admins.map { it.toDomain() },
+                                        page = page,
+                                        pageSize = limit,
+                                        totalCount = count,
+                                        hasNextPage = (page * limit) < count,
+                                        hasPreviousPage = page > 1
+                                    ),
+                                    errors = null
+                                )
                             )
                         )
-                    )
-                }
+                    }
             } catch (e: IOException) {
                 Timber.e(e, "Database error and network error")
                 emit(Resource.Error("Database error: ${e.message}"))
@@ -322,8 +324,10 @@ class AdminRepositoryImpl @Inject constructor(
                         Resource.Error("Server returned success but no data")
                     }
                 }
+
                 BAD_REQUEST, UNAUTHORIZED, FORBIDDEN, NOT_FOUND, HTTP_CONFLICT ->
                     Resource.Error(getUserFriendlyMessage(adminResponse.statusCode))
+
                 else -> Resource.Error(getUserFriendlyMessage(adminResponse.statusCode))
             }
         } catch (e: IOException) {
@@ -339,27 +343,30 @@ class AdminRepositoryImpl @Inject constructor(
     }
 
     // Done no need to review later
-    override suspend fun addDepartment(title: String): Resource<Department> {
+    override suspend fun addDepartment(title: DepartmentRequestDto): Resource<Department> {
         if (!networkUtils.isNetworkAvailable())
             return Resource.Error("No internet connection. Try again later.")
 
         try {
             val response = adminServiceApi.addDepartment(title)
-            val department = response.data?.toDepartment()
+            val departmentEntity =
+                response.data?.let { DepartmentEntity(title = title.title, id = it) }
             when (response.statusCode) {
-                OK -> {
-                    if (department != null) {
+                OK, CREATED -> {
+                    if (departmentEntity != null) {
                         Timber.tag("AdminRepositoryImpl").d(getUserFriendlyMessage(OK))
-                        departmentDao.upsertDepartment(department.toDepartmentEntity())
-                        return Resource.Success(department)
+                        departmentDao.upsertDepartment(departmentEntity)
+                        return Resource.Success(departmentEntity.toDepartment())
                     } else {
                         Timber.tag("AdminRepositoryImpl").d(getUserFriendlyMessage(OK))
                         return Resource.Error("No department data available")
                     }
                 }
-                BAD_REQUEST,UNAUTHORIZED,FORBIDDEN,NOT_FOUND,HTTP_CONFLICT -> {
+
+                BAD_REQUEST, UNAUTHORIZED, FORBIDDEN, NOT_FOUND, HTTP_CONFLICT -> {
                     return Resource.Error(getUserFriendlyMessage(statusCode = response.statusCode))
                 }
+
                 else -> {
                     Timber.e("Unknown error status code: ${response.statusCode} - ${response.message}")
                     return Resource.Error(getUserFriendlyMessage(statusCode = response.statusCode))
@@ -368,10 +375,10 @@ class AdminRepositoryImpl @Inject constructor(
         } catch (e: IOException) {
             Timber.e(e, "Network failure occurred")
             return Resource.Error(getIOExceptionMessage(e))
-        } catch (e: HttpException){
+        } catch (e: HttpException) {
             Timber.e(e, "HTTP exception occurred: ${e.code()}")
             return Resource.Error(getUserFriendlyMessage(e.code()))
-        } catch (e: Exception){
+        } catch (e: Exception) {
             Timber.e(e, "Unknown exception occurred")
             return Resource.Error("Something went wrong. Try again later")
         }
@@ -385,6 +392,7 @@ class AdminRepositoryImpl @Inject constructor(
             return Resource.Error("Failed to get admin count: ${e.message}")
         }
     }
+
     override suspend fun getAdminsCountFromNetwork(): Flow<Resource<Int>> = flow {
         emit(Resource.Loading(true))
 
@@ -413,6 +421,7 @@ class AdminRepositoryImpl @Inject constructor(
             emit(Resource.Error("Unknown error: ${e.message}"))
         }
     }
+
     override suspend fun getCachedDepartmentsCount(): Resource<Int> {
         try {
             val count = statisticsDataStore.departmentCountFlow.first()
@@ -423,6 +432,7 @@ class AdminRepositoryImpl @Inject constructor(
             return Resource.Error("Failed to get department count: ${e.message}")
         }
     }
+
     override suspend fun getDepartmentsCountFromNetwork(): Flow<Resource<Int>> = flow {
         emit(Resource.Loading(true))
 
@@ -451,6 +461,7 @@ class AdminRepositoryImpl @Inject constructor(
             emit(Resource.Error("Unknown error: ${e.message}"))
         }
     }
+
     override suspend fun getCachedTasksCount(): Resource<Int> {
         try {
             val count = statisticsDataStore.taskCountFlow.first()
@@ -459,6 +470,7 @@ class AdminRepositoryImpl @Inject constructor(
             return Resource.Error("Failed to get task count: ${e.message}")
         }
     }
+
     override suspend fun getTasksCountFromNetwork(): Flow<Resource<Int>> = flow {
         emit(Resource.Loading(true))
 
@@ -495,6 +507,7 @@ class AdminRepositoryImpl @Inject constructor(
             emit(Resource.Loading(false))
         }
     }
+
     override suspend fun getCachedManagersCount(): Resource<Int> {
         try {
             val count = statisticsDataStore.managerCountFlow.first()
@@ -505,6 +518,7 @@ class AdminRepositoryImpl @Inject constructor(
             return Resource.Error("Failed to get manager count: ${e.message}")
         }
     }
+
     override suspend fun getManagersCountFromNetwork(): Flow<Resource<Int>> = flow {
         emit(Resource.Loading(true))
 
@@ -536,6 +550,7 @@ class AdminRepositoryImpl @Inject constructor(
             emit(Resource.Loading(false))
         }
     }
+
     override suspend fun getCachedEmployeesCount(): Resource<Int> {
         try {
             val count = statisticsDataStore.employeeCountFlow.first()
@@ -546,6 +561,7 @@ class AdminRepositoryImpl @Inject constructor(
             return Resource.Error("Failed to get employee count: ${e.message}")
         }
     }
+
     override suspend fun getEmployeesCountFromNetwork(): Flow<Resource<Int>> = flow {
         emit(Resource.Loading(true))
 
@@ -583,74 +599,67 @@ class AdminRepositoryImpl @Inject constructor(
         sort: String?,
         forceFetchFromRemote: Boolean,
         isRefreshing: Boolean
-    ): Flow<Resource<ResponseDto<PaginatedData<Department>>>> {
+    ): Flow<Resource<PaginatedData<Department>>> {
         return flow {
             emit(Resource.Loading(true))
-            try {
-                if (forceFetchFromRemote || isRefreshing) {
-                    if (!networkUtils.isNetworkAvailable()) {
-                        emit(Resource.Error("No internet connection. Using cached data."))
-                    } else {
-                        try {
-                            if (isRefreshing) {
-                                departmentDao.deleteAllDepartments()
-                            }
+            if (hasNetwork) {
+                try {
+                    val response = sharedApiService.getDepartments(page, limit, search, sort)
+                    if (!response.isSuccess) {
+                        emit(Resource.Error("Failed to fetch data from server: ${response.message}"))
+                    } else if (response.data != null) {
+                        val departments = response.data.items.map { it.toDepartment() }
+                        departmentDao.upsertDepartments(departments.map { it.toDepartmentEntity() })
 
-                            val response =
-                                sharedApiService.getDepartments(page, limit, search, sort)
-
-                            if (!response.isSuccess) {
-                                emit(Resource.Error("Failed to fetch data from server: ${response.message}"))
-                            } else if (response.data != null) {
-                                val remoteData = response.data.items.map {
-                                    it.toDepartmentEntity()
-                                }
-
-                                departmentDao.upsertDepartments(remoteData)
-
-                            }
-                        } catch (e: IOException) {
-                            emit(Resource.Error("Network error: ${e.message}. Using cached data."))
-                        } catch (e: Exception) {
-                            emit(Resource.Error("Unexpected error: ${e.message}"))
-                        }
+                        emit(
+                            Resource.Success(
+                                PaginatedData(
+                                    items = departments,
+                                    page = page,
+                                    pageSize = limit,
+                                    totalCount = response.data.totalCount,
+                                    hasNextPage = response.data.hasNextPage,
+                                    hasPreviousPage = response.data.hasPreviousPage
+                                )
+                            )
+                        )
+                        Timber.d("Pagination debug: page=$page, limit=$limit, count=${response.data.totalCount}, hasNext=${response.data.hasNextPage}, hasPrev=${response.data.hasPreviousPage}")
+                        return@flow
                     }
+                } catch (e: IOException) {
+                    emit(Resource.Error(getIOExceptionMessage(e)))
+                } catch (e: Exception) {
+                    emit(Resource.Error("Something went wrong. Try again later"))
                 }
-
+            } else {
+                if (forceFetchFromRemote){
+                    emit(Resource.Error("No internet connection. Try again later."))
+                    return@flow
+                }
                 departmentDao.getPagedDepartments(page, limit, search, sort)
-                    .combine(adminDao.getAdminsCountFlow(search)) { departments, count ->
+                    .combine(departmentDao.getDepartmentsCountFlow(search)) { departments, count ->
                         Pair(departments, count)
                     }.collect { (departments, count) ->
                         emit(
                             Resource.Success(
-                                ResponseDto(
-                                    isSuccess = true,
-                                    statusCode = OK,
-                                    message = if (forceFetchFromRemote || isRefreshing)
-                                        "Updated from network" else "Loading from cache",
-                                    data = PaginatedData(
-                                        items = departments.map { it.toDepartment() },
-                                        page = page,
-                                        pageSize = limit,
-                                        totalCount = count,
-                                        hasNextPage = (page * limit) < count,
-                                        hasPreviousPage = page > 1
-                                    ),
-                                    errors = null
+                                data = PaginatedData(
+                                    items = departments.map { it.toDepartment() },
+                                    page = page,
+                                    pageSize = limit,
+                                    totalCount = count,
+                                    hasNextPage = (page * limit) < count,
+                                    hasPreviousPage = page > 1
                                 )
                             )
                         )
+                        emit(Resource.Loading(false))
+                        Timber.d("Pagination debug: page=$page, limit=$limit, count=$count, hasNext=${(page * limit) < count}, hasPrev=${page > 1}")
                     }
-            } catch (e: IOException) {
-                Timber.e(e, "Database error and network error")
-                emit(Resource.Error("Database error: ${e.message}"))
-            } catch (e: Exception) {
-                emit(Resource.Error("Unexpected error: ${e.message}"))
-            } finally {
-                emit(Resource.Loading(false))
             }
+
         }.flowOn(Dispatchers.IO)
     }
+
 
     override suspend fun deleteManager(managerId: UUID): Resource<ResponseDto<String>> {
         if (!networkUtils.isNetworkAvailable()) {
@@ -659,7 +668,7 @@ class AdminRepositoryImpl @Inject constructor(
         try {
             val response = adminServiceApi.deleteManager(managerId)
             return if (response.isSuccess) {
-                if (managerDao.getManagerById(managerId) != null){
+                if (managerDao.getManagerById(managerId) != null) {
                     managerDao.deleteManagerById(managerId)
                 }
                 Resource.Success(
@@ -674,14 +683,15 @@ class AdminRepositoryImpl @Inject constructor(
             } else {
                 Resource.Error(response.message)
             }
-        } catch (e: IOException){
+        } catch (e: IOException) {
             Timber.e("Network error: ${e.message}")
             return Resource.Error("Something went wrong. Try again later")
-        } catch (e: Exception){
+        } catch (e: Exception) {
             Timber.e("Unknown error: ${e.message}")
             return Resource.Error("Something went wrong. Try again later")
         }
     }
+
     override suspend fun deleteEmployee(employeeId: UUID): Resource<ResponseDto<String>> {
         if (!networkUtils.isNetworkAvailable()) {
             return Resource.Error("No internet connection. Try again later.")
@@ -689,7 +699,7 @@ class AdminRepositoryImpl @Inject constructor(
         try {
             val response = adminServiceApi.deleteEmployee(employeeId)
             return if (response.isSuccess) {
-                if (employeeDao.getEmployeeById(employeeId) != null){
+                if (employeeDao.getEmployeeById(employeeId) != null) {
                     employeeDao.deleteEmployeeById(employeeId)
                 }
                 Resource.Success(
@@ -704,10 +714,10 @@ class AdminRepositoryImpl @Inject constructor(
             } else {
                 Resource.Error(response.message)
             }
-        } catch (e: IOException){
+        } catch (e: IOException) {
             Timber.e("Network error: ${e.message}")
             return Resource.Error("Something went wrong. Try again later")
-        } catch (e: Exception){
+        } catch (e: Exception) {
             Timber.e("Unknown error: ${e.message}")
             return Resource.Error("Something went wrong. Try again later")
         }
@@ -715,14 +725,68 @@ class AdminRepositoryImpl @Inject constructor(
 
 
     override suspend fun updateDepartment(
-        departmentId: String,
-        title: String
-    ): Resource<String> {
-        TODO("Not yet implemented")
+        departmentId: UUID,
+        updateDepartmentRequestDto: DepartmentRequestDto
+    ): Resource<ResponseDto<String>> {
+        if (!networkUtils.isNetworkAvailable()) {
+            return Resource.Error("No internet connection. Try again later.")
+        }
+        try {
+            val response = adminServiceApi.updateDepartment(departmentId,updateDepartmentRequestDto)
+            return if (response.isSuccess) {
+                if (departmentDao.getDepartmentById(departmentId) != null) {
+                    departmentDao.upsertDepartment(DepartmentEntity(title = updateDepartmentRequestDto.title, id = departmentId))
+                }
+                Resource.Success(
+                    ResponseDto(
+                        isSuccess = response.isSuccess,
+                        statusCode = OK,
+                        message = response.message,
+                        data = response.data,
+                        errors = response.errors
+                    )
+                )
+            } else {
+                Resource.Error(response.message)
+            }
+        } catch (e: IOException) {
+            Timber.e("Network error: ${e.message}")
+            return Resource.Error("Something went wrong. Try again later")
+        } catch (e: Exception) {
+            Timber.e("Unknown error: ${e.message}")
+            return Resource.Error("Something went wrong. Try again later")
+        }
     }
 
-    override suspend fun deleteDepartment(departmentId: String): Resource<String> {
-        TODO("Not yet implemented")
+    override suspend fun deleteDepartment(departmentId: UUID): Resource<ResponseDto<String>> {
+        if (!networkUtils.isNetworkAvailable()) {
+            return Resource.Error("No internet connection. Try again later.")
+        }
+        try {
+            val response = adminServiceApi.deleteDepartment(departmentId)
+            return if (response.isSuccess) {
+                if (departmentDao.getDepartmentById(departmentId) != null) {
+                    departmentDao.deleteDepartment(departmentId)
+                }
+                Resource.Success(
+                    ResponseDto(
+                        isSuccess = response.isSuccess,
+                        statusCode = OK,
+                        message = response.message,
+                        data = response.data,
+                        errors = response.errors
+                    )
+                )
+            } else {
+                Resource.Error(response.message)
+            }
+        } catch (e: IOException) {
+            Timber.e("Network error: ${e.message}")
+            return Resource.Error("Something went wrong. Try again later")
+        } catch (e: Exception) {
+            Timber.e("Unknown error: ${e.message}")
+            return Resource.Error("Something went wrong. Try again later")
+        }
     }
 
     override suspend fun getTasks(

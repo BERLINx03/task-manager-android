@@ -18,27 +18,38 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Female
 import androidx.compose.material.icons.filled.Male
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Work
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -55,6 +66,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -74,13 +86,24 @@ import java.util.UUID
 fun ProfileScreen(
     profileViewModel: ProfileViewModel,
     navController: NavController,
+    isCurrent: Boolean = false
 ) {
     val state by profileViewModel.state.collectAsStateWithLifecycle()
     val colorScheme = MaterialTheme.colorScheme
     val userRole = profileViewModel.role.collectAsStateWithLifecycle("").value
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
     val pullRefreshState = rememberPullToRefreshState()
+    val department = state.department
 
+    val isCurrentUser = navController.currentBackStackEntry
+        ?.arguments?.getString("isCurrentUser")?.toBoolean() ?: false
+
+    LaunchedEffect(Unit) {
+        if (isCurrentUser) {
+            profileViewModel.onIntent(ProfileIntents.LoadCurrentUser)
+        }
+    }
     LaunchedEffect(state.deletedSuccessfully) {
         if (state.deletedSuccessfully) {
             navController.navigateUp()
@@ -123,6 +146,15 @@ fun ProfileScreen(
                             }
                         },
                         actions = {
+                            if (isCurrent)
+                                IconButton(onClick = { showEditDialog = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = "Edit Profile",
+                                        tint = colorScheme.primary
+                                    )
+                                }
+
                             if (userRole == "Admin") {
                                 IconButton(onClick = { showDeleteDialog = true }) {
                                     Icon(
@@ -148,6 +180,36 @@ fun ProfileScreen(
                     ) {
                         Spacer(modifier = Modifier.height(12.dp))
 
+                        // User Role Badge
+                        Surface(
+                            color = when (profileViewModel.userType) {
+                                "Admin" -> colorScheme.error.copy(alpha = 0.1f)
+                                "Manager" -> colorScheme.primary.copy(alpha = 0.1f)
+                                else -> colorScheme.tertiary.copy(alpha = 0.1f)
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(
+                                1.dp, when (profileViewModel.userType) {
+                                    "Admin" -> colorScheme.error.copy(alpha = 0.2f)
+                                    "Manager" -> colorScheme.primary.copy(alpha = 0.2f)
+                                    else -> colorScheme.tertiary.copy(alpha = 0.2f)
+                                }
+                            )
+                        ) {
+                            Text(
+                                text = profileViewModel.userType.ifEmpty { state.role },
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = when (profileViewModel.userType) {
+                                    "Admin" -> colorScheme.error
+                                    "Manager" -> colorScheme.primary
+                                    else -> colorScheme.tertiary
+                                }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
                         // Profile info card
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -164,7 +226,7 @@ fun ProfileScreen(
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(60.dp)
+                                            .size(80.dp)
                                             .background(
                                                 brush = Brush.linearGradient(
                                                     colors = listOf(
@@ -183,46 +245,87 @@ fun ProfileScreen(
                                                 )
                                             }",
                                             color = colorScheme.onPrimary,
-                                            fontSize = 24.sp,
+                                            fontSize = 32.sp,
                                             fontWeight = FontWeight.Bold
                                         )
                                     }
 
                                     Spacer(modifier = Modifier.width(16.dp))
 
-                                    Column {
-                                        ProfileDetailItem(
-                                            icon = Icons.Default.Phone,
-                                            label = "Phone",
-                                            value = state.phoneNumber
+                                    Column(
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text(
+                                            text = "${state.firstName} ${state.lastName}",
+                                            style = MaterialTheme.typography.titleLarge,
+                                            color = colorScheme.onSurface
                                         )
-                                        ProfileDetailItem(
-                                            icon = if (state.gender == 0) Icons.Default.Male else Icons.Default.Female,
-                                            label = "Gender",
-                                            value = if (state.gender == 0) "Male" else "Female"
-                                        )
-                                        ProfileDetailItem(
-                                            icon = Icons.Default.DateRange,
-                                            label = "Birth Date",
-                                            value = state.birthDate
-                                        )
+
+                                        if (profileViewModel.userId.isNotEmpty()) {
+                                            Text(
+                                                text = "ID: ${profileViewModel.userId}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = colorScheme.onSurface.copy(alpha = 0.6f)
+                                            )
+                                        }
                                     }
+                                }
+
+                                Spacer(modifier = Modifier.height(24.dp))
+
+
+
+                                ProfileDetailItem(
+                                    icon = Icons.Default.Phone,
+                                    label = "Phone",
+                                    value = state.phoneNumber
+                                )
+
+                                ProfileDetailItem(
+                                    icon = if (state.gender == 0) Icons.Default.Male else Icons.Default.Female,
+                                    label = "Gender",
+                                    value = if (state.gender == 0) "Male" else "Female"
+                                )
+
+                                ProfileDetailItem(
+                                    icon = Icons.Default.DateRange,
+                                    label = "Birth Date",
+                                    value = state.birthDate
+                                )
+
+//                                 Only show department for Manager and Employee
+                                if (profileViewModel.userType != "Admin" && department.isNotEmpty()) {
+                                    ProfileDetailItem(
+                                        icon = Icons.Default.Business,
+                                        label = "Department",
+                                        value = department
+                                    )
+                                }
+
+
+                                if (profileViewModel.userType == "Employee") {
+                                    ProfileDetailItem(
+                                        icon = Icons.Default.Work,
+                                        label = "Tasks Completed",
+                                        value = "${state.tasksCompleted}"
+                                    )
                                 }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
 
-                        Text(
-                            text = if (profileViewModel.userType == "Manager")
-                                "Tasks Managed by ${state.firstName}"
-                            else
-                                "Tasks Assigned to ${state.firstName}",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 8.dp)
-                        )
+                            Text(
+                                text = if (profileViewModel.userType == "Manager") {"Tasks Managed by ${state.firstName}"}
+                                else if (profileViewModel.userType == "Employee") {"Tasks Assigned to ${state.firstName}"} else {
+                                    ""
+                                },
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 8.dp)
+                            )
+
                     }
                 }
 
@@ -242,12 +345,17 @@ fun ProfileScreen(
                     )
                 }
 
-                if (state.tasks.isEmpty() && !state.isLoading) {
+                if ((state.tasks.isEmpty() && !state.isLoading) && userRole != "Admin") {
                     item {
                         EmptyTasksPlaceholder()
                     }
                 }
+
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
             }
+
             if (state.isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier
@@ -257,6 +365,7 @@ fun ProfileScreen(
             }
         }
 
+        // Delete dialog
         DeleteManagerDialog(
             showDialog = showDeleteDialog,
             onDismiss = { showDeleteDialog = false },
@@ -287,6 +396,32 @@ fun ProfileScreen(
             firstName = state.firstName,
             lastName = state.lastName
         )
+
+        // Edit profile dialog
+        if (showEditDialog) {
+            EditProfileDialog(
+                showDialog = showEditDialog,
+                onDismiss = { showEditDialog = false },
+                onSave = { firstName, lastName, phoneNumber, gender, birthDate ->
+                    profileViewModel.onIntent(
+                        ProfileIntents.UpdateProfile(
+                            firstName = firstName,
+                            lastName = lastName,
+                            phoneNumber = phoneNumber,
+                            gender = gender,
+                            birthDate = birthDate
+                        )
+                    )
+                    showEditDialog = false
+                },
+                initialFirstName = state.firstName,
+                initialLastName = state.lastName,
+                initialPhoneNumber = state.phoneNumber,
+                initialGender = state.gender,
+                initialBirthDate = state.birthDate,
+                isLoading = state.isLoading
+            )
+        }
     }
 }
 
@@ -443,6 +578,144 @@ private fun EmptyTasksPlaceholder() {
             text = "No tasks found",
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
             style = MaterialTheme.typography.bodyLarge
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EditProfileDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    onSave: (firstName: String, lastName: String, phoneNumber: String, gender: Int, birthDate: String) -> Unit,
+    initialFirstName: String,
+    initialLastName: String,
+    initialPhoneNumber: String,
+    initialGender: Int,
+    initialBirthDate: String,
+    isLoading: Boolean
+) {
+    var firstName by remember { mutableStateOf(initialFirstName) }
+    var lastName by remember { mutableStateOf(initialLastName) }
+    var phoneNumber by remember { mutableStateOf(initialPhoneNumber) }
+    var gender by remember { mutableStateOf(initialGender) }
+    var birthDate by remember { mutableStateOf(initialBirthDate) }
+    var expanded by remember { mutableStateOf(false) }
+
+    val genderOptions = listOf("Male", "Female")
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Edit Profile") },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = firstName,
+                        onValueChange = { firstName = it },
+                        label = { Text("First Name") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = lastName,
+                        onValueChange = { lastName = it },
+                        label = { Text("Last Name") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = phoneNumber,
+                        onValueChange = { phoneNumber = it },
+                        label = { Text("Phone Number") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                    )
+
+                    OutlinedTextField(
+                        value = birthDate,
+                        onValueChange = { birthDate = it },
+                        label = { Text("Birth Date (YYYY-MM-DD)") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        singleLine = true
+                    )
+
+                    // Gender dropdown
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = if (gender == 0) "Male" else "Female",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Gender") },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                            },
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                        )
+
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            genderOptions.forEachIndexed { index, option ->
+                                DropdownMenuItem(
+                                    text = { Text(option) },
+                                    onClick = {
+                                        gender = index
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onSave(firstName, lastName, phoneNumber, gender, birthDate)
+                    },
+                    enabled = !isLoading && firstName.isNotBlank() && lastName.isNotBlank() && phoneNumber.isNotBlank() && birthDate.isNotBlank()
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Save")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
         )
     }
 }

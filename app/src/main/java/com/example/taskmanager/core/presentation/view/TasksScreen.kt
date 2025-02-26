@@ -115,7 +115,7 @@ fun TasksScreen(
         user = user,
         loginViewModel = loginViewModel,
         tasksSelected = true,
-        navController = navController
+        navController = navController,
     ) {
         Column(
             modifier = Modifier.fillMaxSize()

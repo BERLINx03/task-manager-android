@@ -102,7 +102,7 @@ fun ManagersScreen(
         user = user,
         managersSelected = true,
         loginViewModel = loginViewModel,
-        navController = navController
+        navController = navController,
     ) {
         Column(
             modifier = Modifier.fillMaxSize()

@@ -53,7 +53,7 @@ class AdminRepositoryImpl @Inject constructor(
     private val mapper: AdminMapper,
     private val networkUtils: NetworkUtils,
     private val statisticsDataStore: StatisticsDataStore,
-    private val database: TaskManagerDatabase
+    database: TaskManagerDatabase
 ) : AdminRepository {
 
     private val managerDao = database.managerDao
@@ -66,13 +66,6 @@ class AdminRepositoryImpl @Inject constructor(
 
     override suspend fun getCurrentAdmin(): Resource<Admin> {
         try {
-            val cachedAdmin = adminDao.getCurrentAdmin(current = true)
-            if (cachedAdmin != null) {
-                Timber.d("Returning admin from cache")
-                return Resource.Success(data = cachedAdmin.toDomain())
-            }
-            Timber.d("No cached admin found, fetching from network")
-
             if (!networkUtils.isNetworkAvailable()) {
                 Timber.w("Network is not available")
                 return Resource.Error("No internet connection. Try again later.")
@@ -85,58 +78,34 @@ class AdminRepositoryImpl @Inject constructor(
 
                     val admin = response.data?.let { mapper.mapToDomain(it) }
                     if (admin != null) {
-                        adminDao.resetAndUpsertAdmin(admin.toEntity())
-
                         return Resource.Success(data = admin)
-
                     } else {
                         Timber.w("Network response successful but no admin data available")
                         return Resource.Error("No admin data available")
                     }
                 }
 
-                BAD_REQUEST -> {
+                BAD_REQUEST,UNAUTHORIZED,FORBIDDEN,NOT_FOUND,HTTP_CONFLICT -> {
                     Timber.e("Bad request error: ${response.message}")
-                    return Resource.Error("Bad Request: ${response.message}")
-                }
-
-                UNAUTHORIZED -> {
-                    Timber.e("Unauthorized access: ${response.message}")
-                    return Resource.Error("Unauthorized: ${response.message}")
-                }
-
-                FORBIDDEN -> {
-                    Timber.e("Forbidden access: ${response.message}")
-                    return Resource.Error("Forbidden: ${response.message}")
-                }
-
-                NOT_FOUND -> {
-                    Timber.e("Resource not found: ${response.message}")
-                    return Resource.Error("Not Found: ${response.message}")
-                }
-
-                HTTP_CONFLICT -> {
-                    Timber.e("Conflict error: ${response.message}")
-                    return Resource.Error("Conflict: ${response.message}")
+                    return Resource.Error(getUserFriendlyMessage(statusCode = response.statusCode))
                 }
 
                 else -> {
                     Timber.e("Unknown error status code: ${response.statusCode} - ${response.message}")
-                    return Resource.Error("Error: ${response.message}")
+                    return Resource.Error(getUserFriendlyMessage(statusCode = response.statusCode))
                 }
             }
         } catch (e: IOException) {
             Timber.e(e, "Network failure occurred")
-            return Resource.Error("Network Failure: ${e.localizedMessage}")
+            return Resource.Error(getIOExceptionMessage(e))
         } catch (e: HttpException) {
             Timber.e(e, "HTTP exception occurred: ${e.code()}")
             return Resource.Error("Http Error: ${e.localizedMessage}")
         } catch (e: Exception) {
             Timber.e(e, "Unknown exception occurred")
-            return Resource.Error("Unknown Error: ${e.localizedMessage}")
+            return Resource.Error("Something went wrong. Try again later.")
         }
     }
-
 
     override suspend fun getAdminById(adminId: UUID): Resource<ResponseDto<Admin>> {
         return try {

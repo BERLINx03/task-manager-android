@@ -29,9 +29,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -70,24 +68,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
 import com.example.taskmanager.core.domain.model.Department
 import com.example.taskmanager.core.presentation.intents.DepartmentIntents
-import com.example.taskmanager.core.presentation.viewmodel.DepartmentDetailsViewModel
 import com.example.taskmanager.core.presentation.viewmodel.DepartmentsViewModel
 import com.example.taskmanager.core.utils.ErrorBox
 import com.example.taskmanager.core.utils.NavigationDrawer
 import com.example.taskmanager.core.utils.PermissionDialog
 import com.example.taskmanager.core.utils.Screens
 import com.example.taskmanager.core.utils.SortOption
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -129,7 +123,8 @@ fun DepartmentsScreen(
             drawerState = drawerState,
             user = user,
             loginViewModel = loginViewModel,
-            navController = navController
+            navController = navController,
+            departmentsSelected = true
         ) {
             Column(
                 modifier = Modifier

@@ -25,8 +25,6 @@ sealed class Screens(val route: String) {
         data object ChooseRole : AuthScreens("choose_role")
     }
 
-    data object SplashScreen: Screens("splash_screen")
-
     sealed class AppScreens(route: String) : Screens(route) {
         data object Dashboard : AppScreens("dashboard")
         data object Departments : AppScreens("departments")
@@ -34,7 +32,9 @@ sealed class Screens(val route: String) {
         data object Managers : AppScreens("managers")
         data object Employees : AppScreens("employees")
         data object Profile : AppScreens("profile/{role}/{userId}")
+        data object CurrentUserProfile: AppScreens("my_profile?isCurrent={isCurrent}")
         data object Tasks : AppScreens("tasks")
         data object TaskDetails: AppScreens("tasks/{role}/{taskId}")
+        data object Settings: AppScreens("settings")
     }
 }

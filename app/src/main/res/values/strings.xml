@@ -10,4 +10,9 @@
     <string name="forgot_password">Forgot Password?</string>
     <string name="login">Login</string>
     <string name="don_t_have_an_account">"Don't have an account? "</string>
+    <string name="settings">Settings</string>
+    <string name="language">Language</string>
+    <string name="app_language">App Language</string>
+    <string name="appearance">Appearance</string>
+    <string name="dark_mode">Dark Mode</string>
 </resources>

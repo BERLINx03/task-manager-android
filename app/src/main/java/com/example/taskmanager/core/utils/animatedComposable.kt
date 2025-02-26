@@ -7,6 +7,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.navigation.NamedNavArgument
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 
@@ -16,7 +17,7 @@ import androidx.navigation.compose.composable
 fun NavGraphBuilder.animatedComposable(
     route: String,
     arguments: List<NamedNavArgument> = emptyList(),
-    content: @Composable () -> Unit
+    content: @Composable (NavBackStackEntry) -> Unit
 ) {
     composable(
         route = route,
@@ -46,7 +47,7 @@ fun NavGraphBuilder.animatedComposable(
             ) + fadeOut(animationSpec = tween(300))
         }
     ) {
-        content()
+        content(it)
     }
 }
 // swipe up animation

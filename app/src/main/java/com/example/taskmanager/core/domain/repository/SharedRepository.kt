@@ -5,6 +5,7 @@ import com.example.taskmanager.core.domain.model.Department
 import com.example.taskmanager.core.domain.model.ManagerAndEmployee
 import com.example.taskmanager.core.domain.model.PaginatedData
 import com.example.taskmanager.core.domain.model.Task
+import com.example.taskmanager.core.domain.model.User
 import com.example.taskmanager.core.utils.Resource
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
@@ -13,6 +14,9 @@ import java.util.UUID
  * @author Abdallah Elsokkary
  */
 interface SharedRepository {
+
+    suspend fun getCurrentManager(): Resource<User>
+    suspend fun getCurrentEmployee(): Resource<User>
     // Admins, Managers
     suspend fun getPagedManagers(
         page: Int,

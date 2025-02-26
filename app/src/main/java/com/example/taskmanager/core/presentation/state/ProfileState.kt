@@ -3,9 +3,12 @@ package com.example.taskmanager.core.presentation.state
 import com.example.taskmanager.core.domain.model.Task
 
 data class ProfileState(
+    val role: String = "",
     val firstName: String = "",
     val lastName: String = "",
     val phoneNumber: String = "",
+    val department: String = "",
+    val tasksCompleted: Int = 0,
     val gender: Int = 0,
     val isRefreshing: Boolean = false,
     val birthDate: String = "",

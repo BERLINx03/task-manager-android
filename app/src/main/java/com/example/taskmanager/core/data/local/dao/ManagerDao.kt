@@ -5,7 +5,6 @@ import androidx.room.Query
 import androidx.room.Upsert
 import com.example.taskmanager.core.data.local.entities.ManagerEntity
 import kotlinx.coroutines.flow.Flow
-import retrofit2.http.DELETE
 import java.util.UUID
 
 /**

@@ -1,7 +1,11 @@
 package com.example.taskmanager.core.data.remote
 
 import com.example.taskmanager.auth.data.remote.reponsemodels.ResponseDto
+import com.example.taskmanager.core.data.remote.dto.UpdateManagerAndEmployeeRequestDto
+import com.example.taskmanager.core.domain.model.User
+import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 import java.util.UUID
@@ -10,6 +14,18 @@ import java.util.UUID
  * @author Abdallah Elsokkary
  */
 interface SharedApiService{
+
+    @PUT("/Managers/{managerId}")
+    suspend fun updateManager(
+        @Path("managerId") managerId: UUID,
+        @Body updateManagerRequestDto: UpdateManagerAndEmployeeRequestDto
+    ): ResponseDto<UUID>
+
+    @PUT("/Employees/{employeeId}")
+    suspend fun updateEmployee(
+        @Path("employeeId") employeeId: UUID,
+        @Body updateEmployeeRequestDto: UpdateManagerAndEmployeeRequestDto
+    ): ResponseDto<UUID>
 
     // All
     @GET("/Department")
@@ -107,4 +123,10 @@ interface SharedApiService{
         @Query("Category") search: String? = null,
         @Query("Sort") sort: String? = null
     ): ResponseDto<ResponseDto.PaginatedResponse<ResponseDto.TaskResponse>>
+
+    @GET("/Managers/Current")
+    suspend fun getCurrentManager(): ResponseDto<User>
+
+    @GET("/Employees/Current")
+    suspend fun getCurrentEmployee(): ResponseDto<User>
 }

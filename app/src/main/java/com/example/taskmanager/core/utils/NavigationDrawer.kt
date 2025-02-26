@@ -104,9 +104,13 @@ fun NavigationDrawer(
                 // Navigation Items
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Settings, "Profile Settings") },
-                    label = { Text("Profile Settings") },
+                    label = { Text("Profile") },
                     selected = profileSettingsSelected,
-                    onClick = { /* Handle profile settings navigation */ },
+                    onClick = {
+                        navController.navigate(Screens.AppScreens.CurrentUserProfile.route
+                            .replace("{isCurrent}", "true")
+                        )
+                    },
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
 
@@ -114,7 +118,7 @@ fun NavigationDrawer(
                     icon = { Icon(Icons.Default.Build, "App Settings") },
                     label = { Text("App Settings") },
                     selected = appSettingsSelected,
-                    onClick = { /* Handle app settings navigation */ },
+                    onClick = { navController.navigate(Screens.AppScreens.Settings.route) },
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
 

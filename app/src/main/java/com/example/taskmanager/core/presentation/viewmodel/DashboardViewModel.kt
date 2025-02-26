@@ -1,9 +1,9 @@
 package com.example.taskmanager.core.presentation.viewmodel
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.taskmanager.admin.domain.repository.AdminRepository
+import com.example.taskmanager.auth.data.local.TokenDataStore
 import com.example.taskmanager.core.data.local.datastore.UserInfoDataStore
 import com.example.taskmanager.core.presentation.intents.DashboardIntents
 import com.example.taskmanager.core.presentation.state.DashboardState
@@ -15,7 +15,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -27,13 +26,14 @@ import javax.inject.Inject
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val adminRepository: AdminRepository,
-    private val userInfoDataStore: UserInfoDataStore
+    private val userInfoDataStore: UserInfoDataStore,
+    userRole: TokenDataStore
 ) : ViewModel() {
 
     private val _dashboardState = MutableStateFlow(DashboardState())
     val dashboardState = _dashboardState.asStateFlow()
 
-
+    val role = userRole.userRole
 
     init {
         getCachedAdminsCount()

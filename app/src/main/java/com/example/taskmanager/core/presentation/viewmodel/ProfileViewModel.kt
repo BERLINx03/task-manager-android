@@ -3,6 +3,7 @@ package com.example.taskmanager.core.presentation.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.taskmanager.admin.data.remote.dto.UpdateAdminRequestDto
 import com.example.taskmanager.admin.domain.repository.AdminRepository
 import com.example.taskmanager.auth.data.local.TokenDataStore
 import com.example.taskmanager.core.domain.repository.SharedRepository
@@ -10,12 +11,14 @@ import com.example.taskmanager.core.presentation.intents.ProfileIntents
 import com.example.taskmanager.core.presentation.state.ProfileState
 import com.example.taskmanager.core.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
@@ -41,8 +44,19 @@ class ProfileViewModel @Inject constructor(
     private val pageSize = 10
 
     init {
-        loadProfile()
-        loadTasks(false)
+        viewModelScope.launch {
+            userRole.userRole.collectLatest { role ->
+                _state.update { it.copy(role = role ?: "") }
+
+                if (userId.isEmpty() && userType.isEmpty()) {
+                    loadCurrentUser()
+                } else {
+                    loadProfile()
+                    loadTasks(false)
+                }
+            }
+        }
+
     }
 
     fun onIntent(intent: ProfileIntents) {
@@ -51,21 +65,194 @@ class ProfileViewModel @Inject constructor(
                 viewModelScope.launch {
                     _state.update { it.copy(isRefreshing = true) }
                     try {
-                        loadProfile()
-                        loadTasks(true)
+                        if (userId.isEmpty() && userType.isEmpty()) {
+                            loadCurrentUser()
+                        } else {
+                            loadProfile()
+                            loadTasks(true)
+                        }
                         delay(300)
                     } finally {
                         _state.update { it.copy(isRefreshing = false) }
                     }
                 }
             }
-
+            is ProfileIntents.LoadCurrentUser -> loadCurrentUser()
             is ProfileIntents.DeleteManager -> deleteManager(intent.managerId)
             is ProfileIntents.DeleteEmployee -> deleteEmployee(intent.employeeId)
+            is ProfileIntents.UpdateProfile -> updateAdminProfile(
+                intent.firstName,
+                intent.lastName,
+                intent.phoneNumber,
+                intent.gender,
+                intent.birthDate
+            )
         }
     }
 
-    private fun loadManagerTasks(forceFetchFromRemote: Boolean){
+    private fun updateAdminProfile(
+        firstName: String,
+        lastName: String,
+        phoneNumber: String,
+        gender: Int,
+        birthDate: String
+    ) {
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                adminRepository.updateAdmin(admin = UpdateAdminRequestDto(firstName,lastName,phoneNumber,gender,birthDate))
+            }
+            when (result) {
+                is Resource.Error -> {
+                    _state.update {
+                        it.copy(
+                            errorMessage = result.message,
+                            isLoading = false
+                        )
+                    }
+                }
+                is Resource.Loading -> {
+                    _state.update {
+                        it.copy(isLoading = result.isLoading)
+                    }
+                }
+                is Resource.Success -> {
+                    _state.update {
+                        it.copy(
+                            isLoading = false
+                        )
+                    }
+                    loadCurrentUser()
+                }
+            }
+        }
+    }
+
+
+    private fun loadCurrentUser() {
+        Timber.d("loadCurrentUser() has started execution")
+        Timber.d("userId: $userId and role: ${_state.value.role}")
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+
+            when (_state.value.role) {
+                "Admin" -> {
+                    val result = withContext(Dispatchers.IO) {
+                        adminRepository.getCurrentAdmin()
+                    }
+                    Timber.d("result: ${Resource.Success(result)}")
+                    when (result) {
+                        is Resource.Error -> {
+                            _state.update {
+                                it.copy(
+                                    errorMessage = result.message,
+                                    isLoading = false
+                                )
+                            }
+                        }
+
+                        is Resource.Loading -> {
+                            _state.update {
+                                it.copy(isLoading = result.isLoading)
+                            }
+                        }
+
+                        is Resource.Success -> {
+                            _state.update {
+                                it.copy(
+                                    firstName = result.data.firstName,
+                                    lastName = result.data.lastName,
+                                    phoneNumber = result.data.phoneNumber,
+                                    gender = result.data.gender,
+                                    birthDate = result.data.birthDate,
+                                    isLoading = false
+                                )
+                            }
+                        }
+                    }
+                }
+
+                "Manager" -> {
+                    val result = withContext(Dispatchers.IO) {
+                        sharedRepository.getCurrentManager()
+                    }
+                    when (result) {
+                        is Resource.Error -> {
+                            _state.update {
+                                it.copy(
+                                    errorMessage = result.message,
+                                    isLoading = false
+                                )
+                            }
+                        }
+
+                        is Resource.Loading -> {
+                            _state.update {
+                                it.copy(isLoading = result.isLoading)
+                            }
+                        }
+
+                        is Resource.Success -> {
+                            _state.update {
+                                it.copy(
+                                    firstName = result.data.firstName,
+                                    lastName = result.data.lastName,
+                                    phoneNumber = result.data.phoneNumber,
+                                    gender = result.data.gender,
+                                    birthDate = result.data.birthDate,
+                                    isLoading = false
+                                )
+                            }
+                        }
+                    }
+                }
+
+                "Employee" -> {
+                    val result = withContext(Dispatchers.IO) {
+                        sharedRepository.getCurrentEmployee()
+                    }
+                    when (result) {
+                        is Resource.Error -> {
+                            _state.update {
+                                it.copy(
+                                    errorMessage = result.message,
+                                    isLoading = false
+                                )
+                            }
+                        }
+
+                        is Resource.Loading -> {
+                            _state.update {
+                                it.copy(isLoading = result.isLoading)
+                            }
+                        }
+
+                        is Resource.Success -> {
+                            _state.update {
+                                it.copy(
+                                    firstName = result.data.firstName,
+                                    lastName = result.data.lastName,
+                                    phoneNumber = result.data.phoneNumber,
+                                    gender = result.data.gender,
+                                    birthDate = result.data.birthDate,
+                                    isLoading = false
+                                )
+                            }
+                        }
+                    }
+                }
+
+                else -> {
+                    _state.update {
+                        it.copy(
+                            errorMessage = "Unknown user type",isLoading = false
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun loadManagerTasks(forceFetchFromRemote: Boolean) {
 
         Timber.d("loadTasks() has started execution")
         viewModelScope.launch {
@@ -131,7 +318,8 @@ class ProfileViewModel @Inject constructor(
             }
         }
     }
-    private fun loadEmployeeTasks(forceFetchFromRemote: Boolean){
+
+    private fun loadEmployeeTasks(forceFetchFromRemote: Boolean) {
 
         Timber.d("loadTasks() has started execution")
         viewModelScope.launch {
@@ -197,6 +385,7 @@ class ProfileViewModel @Inject constructor(
             }
         }
     }
+
     private fun loadTasks(forceFetchFromRemote: Boolean) {
         when (userType) {
             "Manager" -> loadManagerTasks(forceFetchFromRemote)
@@ -315,6 +504,7 @@ class ProfileViewModel @Inject constructor(
             }
         }
     }
+
     private fun deleteEmployee(employeeId: UUID) {
         _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {

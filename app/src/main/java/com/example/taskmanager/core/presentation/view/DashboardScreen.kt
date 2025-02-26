@@ -3,7 +3,6 @@ package com.example.taskmanager.core.presentation.view
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -64,90 +63,92 @@ fun DashboardScreen(
     viewModel: DashboardViewModel,
     loginViewModel: LoginViewModel,
     navController: NavController,
-    innerPadding: PaddingValues
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+    val role = viewModel.role.collectAsState(initial = "").value
     val state = viewModel.dashboardState.collectAsState().value
     val user = viewModel.dashboardState.collectAsState().value.user
     val isRefreshing = state.isRefreshing
     val pullRefreshState = rememberPullToRefreshState()
 
-    NavigationDrawer(
-        drawerState = drawerState,
-        user = user,
-        loginViewModel = loginViewModel,
-        homeSelected = true,
-        navController = navController
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
+    if (role != null) {
+        NavigationDrawer(
+            drawerState = drawerState,
+            user = user,
+            loginViewModel = loginViewModel,
+            homeSelected = true,
+            navController = navController,
         ) {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "Welcome",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            text = user?.let {
-                                "${it.firstName} ${it.lastName}"
-                            } ?: "Unknown User",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            scope.launch {
-                                drawerState.open()
-                            }
-                        }
-                    ) {
-                        Icon(Icons.Default.Menu, "Open Menu")
-                    }
-                }
-            )
-            // Main content
-            PullToRefreshBox(
-                state = pullRefreshState,
-                onRefresh = { viewModel.onIntent(DashboardIntents.Refresh) },
-                isRefreshing = isRefreshing,
-                indicator = {
-                    Indicator(
-                        modifier = Modifier.align(Alignment.TopCenter),
-                        isRefreshing = isRefreshing,
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        state = pullRefreshState
-                    )
-                },
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .weight(1f)
             ) {
-                DashboardContent(
-                    state = state,
-                    navController = navController,
-                    recentTasks = listOf(
-                        TaskItem(
-                            title = "Update Employee Handbook",
-                            assignee = "John Doe",
-                            dueDate = "2024-02-25",
-                            status = "In Progress"
-                        ),
-                        TaskItem(
-                            title = "Quarterly Performance Review",
-                            assignee = "Jane Smith",
-                            dueDate = "2024-02-28",
-                            status = "Pending"
-                        ),
-                    )
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(
+                                text = "Welcome",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                text = user?.let {
+                                    "${it.firstName} ${it.lastName}"
+                                } ?: "Unknown User",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    drawerState.open()
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Default.Menu, "Open Menu")
+                        }
+                    }
                 )
+                // Main content
+                PullToRefreshBox(
+                    state = pullRefreshState,
+                    onRefresh = { viewModel.onIntent(DashboardIntents.Refresh) },
+                    isRefreshing = isRefreshing,
+                    indicator = {
+                        Indicator(
+                            modifier = Modifier.align(Alignment.TopCenter),
+                            isRefreshing = isRefreshing,
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            state = pullRefreshState
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f)
+                ) {
+                    DashboardContent(
+                        state = state,
+                        navController = navController,
+                        recentTasks = listOf(
+                            TaskItem(
+                                title = "Update Employee Handbook",
+                                assignee = "John Doe",
+                                dueDate = "2024-02-25",
+                                status = "In Progress"
+                            ),
+                            TaskItem(
+                                title = "Quarterly Performance Review",
+                                assignee = "Jane Smith",
+                                dueDate = "2024-02-28",
+                                status = "Pending"
+                            ),
+                        )
+                    )
+                }
             }
         }
     }

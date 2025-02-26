@@ -15,6 +15,5 @@ object DataStoreConstants {
     const val TASK_COUNT = "task_count"
     const val MANAGER_COUNT = "manager_count"
     const val EMPLOYEE_COUNT = "employee_count"
-    const val USER_INFO_DATASTORE = "user_info_datastore"
     const val USER_INFO_KEY = "user_info"
 }

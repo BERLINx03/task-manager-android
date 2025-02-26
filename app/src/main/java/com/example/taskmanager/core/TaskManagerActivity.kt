@@ -7,6 +7,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -33,16 +36,19 @@ import com.example.taskmanager.core.presentation.view.DepartmentsScreen
 import com.example.taskmanager.core.presentation.view.EmployeesScreen
 import com.example.taskmanager.core.presentation.view.ManagersScreen
 import com.example.taskmanager.core.presentation.view.ProfileScreen
+import com.example.taskmanager.core.presentation.view.SettingsScreen
 import com.example.taskmanager.core.presentation.view.TaskDetailsScreen
 import com.example.taskmanager.core.presentation.view.TasksScreen
 import com.example.taskmanager.core.presentation.viewmodel.DashboardViewModel
 import com.example.taskmanager.core.presentation.viewmodel.DepartmentDetailsViewModel
 import com.example.taskmanager.core.presentation.viewmodel.DepartmentsViewModel
 import com.example.taskmanager.core.presentation.viewmodel.EmployeesViewModel
+import com.example.taskmanager.core.presentation.viewmodel.LanguageViewModel
 import com.example.taskmanager.core.presentation.viewmodel.ManagersViewModel
 import com.example.taskmanager.core.presentation.viewmodel.ProfileViewModel
 import com.example.taskmanager.core.presentation.viewmodel.TaskDetailsViewModel
 import com.example.taskmanager.core.presentation.viewmodel.TasksViewModel
+import com.example.taskmanager.core.ui.ThemeViewModel
 import com.example.taskmanager.core.ui.theme.TaskManagerTheme
 import com.example.taskmanager.core.utils.Screens
 import com.example.taskmanager.core.utils.animatedComposable
@@ -59,6 +65,8 @@ class TaskManagerActivity : ComponentActivity() {
     private val tasksViewModel: TasksViewModel by viewModels()
     private val managersViewModel: ManagersViewModel by viewModels()
     private val employeesViewModel: EmployeesViewModel by viewModels()
+    private val languageViewModel: LanguageViewModel by viewModels()
+    private val themeViewModel: ThemeViewModel by viewModels()
 
     //    private val profileViewModel: ProfileViewModel by viewModels() you can't use same viewmodel for different screens of this
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,7 +79,15 @@ class TaskManagerActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            TaskManagerTheme {
+            val isDarkMode by themeViewModel.isDarkMode.collectAsState()
+            val currentLanguage by languageViewModel.currentLanguage.collectAsState()
+
+            LaunchedEffect(currentLanguage) {
+                if (currentLanguage.isNotEmpty()) {
+                    languageViewModel.changeLanguage(currentLanguage)
+                }
+            }
+            TaskManagerTheme(darkTheme = isDarkMode) {
                 val navController = rememberNavController()
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     NavHost(
@@ -167,8 +183,7 @@ class TaskManagerActivity : ComponentActivity() {
                             DashboardScreen(
                                 viewModel = dashboardViewModel,
                                 loginViewModel = loginViewModel,
-                                navController = navController,
-                                innerPadding = innerPadding
+                                navController = navController
                             )
                         }
 
@@ -235,6 +250,16 @@ class TaskManagerActivity : ComponentActivity() {
                             )
                         }
 
+                        animatedComposable(Screens.AppScreens.CurrentUserProfile.route,){
+                            val profileViewModel: ProfileViewModel = hiltViewModel()
+                            val isCurrent = it.arguments?.getString("isCurrent")?.toBoolean() ?: false
+                            ProfileScreen(
+                                profileViewModel = profileViewModel,
+                                navController = navController,
+                                isCurrent = isCurrent
+                            )
+                        }
+
                         animatedComposable(
                             route = Screens.AppScreens.TaskDetails.route,
                             arguments = listOf(
@@ -247,6 +272,15 @@ class TaskManagerActivity : ComponentActivity() {
                                 taskDetailsViewModel = taskDetailsViewModel,
                                 navController = navController
                             )
+                        }
+
+                        animatedComposable(Screens.AppScreens.Settings.route){
+                            SettingsScreen(
+                                languageViewModel = languageViewModel,
+                                themeViewModel = themeViewModel
+                            ) {
+                                navController.navigateUp()
+                            }
                         }
                     }
                 }

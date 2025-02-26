@@ -14,11 +14,19 @@ import com.example.taskmanager.core.domain.model.Department
 import com.example.taskmanager.core.domain.model.ManagerAndEmployee
 import com.example.taskmanager.core.domain.model.PaginatedData
 import com.example.taskmanager.core.domain.model.Task
+import com.example.taskmanager.core.domain.model.User
 import com.example.taskmanager.core.domain.repository.SharedRepository
-import com.example.taskmanager.core.utils.HttpStatusCodes
+import com.example.taskmanager.core.utils.HttpStatusCodes.BAD_REQUEST
+import com.example.taskmanager.core.utils.HttpStatusCodes.CREATED
+import com.example.taskmanager.core.utils.HttpStatusCodes.FORBIDDEN
+import com.example.taskmanager.core.utils.HttpStatusCodes.HTTP_CONFLICT
+import com.example.taskmanager.core.utils.HttpStatusCodes.NOT_FOUND
+import com.example.taskmanager.core.utils.HttpStatusCodes.OK
+import com.example.taskmanager.core.utils.HttpStatusCodes.UNAUTHORIZED
 import com.example.taskmanager.core.utils.NetworkUtils
 import com.example.taskmanager.core.utils.Resource
 import com.example.taskmanager.core.utils.getIOExceptionMessage
+import com.example.taskmanager.core.utils.getUserFriendlyMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -100,7 +108,10 @@ class SharedRepositoryImpl @Inject constructor(
                         limit = limit,
                         totalCount = taskDao.getManagersTasksCount(managerId, search),
                         message = "Loading from cache",
-                        hasNextPage = (page * limit) < taskDao.getManagersTasksCount(managerId, search),
+                        hasNextPage = (page * limit) < taskDao.getManagersTasksCount(
+                            managerId,
+                            search
+                        ),
                         hasPreviousPage = page > 1,
                         errors = null
                     )
@@ -154,6 +165,87 @@ class SharedRepositoryImpl @Inject constructor(
             emit(Resource.Loading(false))
         }
     }.flowOn(Dispatchers.IO)
+
+
+    override suspend fun getCurrentManager(): Resource<User> {
+        try {
+            if (!networkUtils.isNetworkAvailable()) {
+                Timber.w("Network is not available")
+                return Resource.Error("No internet connection. Try again later.")
+            }
+
+            val response = sharedApiService.getCurrentManager()
+            when (response.statusCode) {
+                OK, CREATED -> {
+                    Timber.i("Admin fetched successfully from network")
+                    val manager = response.data
+                    return if (manager != null) {
+                        Resource.Success(data = manager)
+
+                    } else Resource.Error("No data found")
+                }
+
+                BAD_REQUEST, UNAUTHORIZED, FORBIDDEN, NOT_FOUND, HTTP_CONFLICT -> {
+                    Timber.e("Bad request error: ${response.message}")
+                    return Resource.Error(getUserFriendlyMessage(response.statusCode))
+                }
+
+                else -> {
+                    Timber.e("Unknown error status code: ${response.statusCode} - ${response.message}")
+                    return Resource.Error("Something went wrong. Try again later.")
+                }
+            }
+        } catch (e: IOException) {
+            Timber.e(e, "Network failure occurred")
+            return Resource.Error(getIOExceptionMessage(e))
+        } catch (e: HttpException) {
+            Timber.e(e, "HTTP exception occurred: ${e.code()}")
+            return Resource.Error(getUserFriendlyMessage(e.code()))
+        } catch (e: Exception) {
+            Timber.e(e, "Unknown exception occurred")
+            return Resource.Error("Something went wrong. Try again later.")
+        }
+    }
+
+    override suspend fun getCurrentEmployee(): Resource<User> {
+        try {
+            if (!networkUtils.isNetworkAvailable()) {
+                Timber.w("Network is not available")
+                return Resource.Error("No internet connection. Try again later.")
+            }
+
+            val response = sharedApiService.getCurrentEmployee()
+            when (response.statusCode) {
+                OK, CREATED -> {
+                    Timber.i("employee fetched successfully from network")
+                    val employee = response.data
+                    return if (employee != null) {
+                        Resource.Success(data = employee)
+
+                    } else Resource.Error("No data found")
+                }
+
+                BAD_REQUEST, UNAUTHORIZED, FORBIDDEN, NOT_FOUND, HTTP_CONFLICT -> {
+                    Timber.e("Bad request error: ${response.message}")
+                    return Resource.Error(getUserFriendlyMessage(response.statusCode))
+                }
+
+                else -> {
+                    Timber.e("Unknown error status code: ${response.statusCode} - ${response.message}")
+                    return Resource.Error("Something went wrong. Try again later.")
+                }
+            }
+        } catch (e: IOException) {
+            Timber.e(e, "Network failure occurred")
+            return Resource.Error(getIOExceptionMessage(e))
+        } catch (e: HttpException) {
+            Timber.e(e, "HTTP exception occurred: ${e.code()}")
+            return Resource.Error(getUserFriendlyMessage(e.code()))
+        } catch (e: Exception) {
+            Timber.e(e, "Unknown exception occurred")
+            return Resource.Error("Something went wrong. Try again later.")
+        }
+    }
 
     override suspend fun getPagedManagers(
         page: Int,
@@ -241,7 +333,13 @@ class SharedRepositoryImpl @Inject constructor(
             emit(Resource.Loading(true))
             if (hasNetwork) {
                 try {
-                    val response = sharedApiService.getManagersInDepartment(departmentId, page, limit, search, sort)
+                    val response = sharedApiService.getManagersInDepartment(
+                        departmentId,
+                        page,
+                        limit,
+                        search,
+                        sort
+                    )
                     if (!response.isSuccess) {
                         emit(Resource.Error("Failed to fetch data from server: ${response.message}"))
                     } else if (response.data != null) {
@@ -269,7 +367,7 @@ class SharedRepositoryImpl @Inject constructor(
                     emit(Resource.Error("Something went wrong. Try again later"))
                 }
             } else {
-                if (forceFetchFromRemote){
+                if (forceFetchFromRemote) {
                     emit(Resource.Error("No internet connection. Try again later."))
                     return@flow
                 }
@@ -280,7 +378,7 @@ class SharedRepositoryImpl @Inject constructor(
                         emit(
                             Resource.Success(
                                 data = PaginatedData(
-                                    items = managers.map{ manager -> manager.toManagerAndEmployee() },
+                                    items = managers.map { manager -> manager.toManagerAndEmployee() },
                                     page = page,
                                     pageSize = limit,
                                     totalCount = count,
@@ -309,7 +407,13 @@ class SharedRepositoryImpl @Inject constructor(
             emit(Resource.Loading(true))
             if (hasNetwork) {
                 try {
-                    val response = sharedApiService.getEmployeesInDepartment(departmentId, page, limit, search, sort)
+                    val response = sharedApiService.getEmployeesInDepartment(
+                        departmentId,
+                        page,
+                        limit,
+                        search,
+                        sort
+                    )
                     if (!response.isSuccess) {
                         emit(Resource.Error("Failed to fetch data from server: ${response.message}"))
                     } else if (response.data != null) {
@@ -337,18 +441,18 @@ class SharedRepositoryImpl @Inject constructor(
                     emit(Resource.Error("Something went wrong. Try again later"))
                 }
             } else {
-                if (forceFetchFromRemote){
+                if (forceFetchFromRemote) {
                     emit(Resource.Error("No internet connection. Try again later."))
                     return@flow
                 }
-                employeeDao.getPagedEmployeesByDepartment(departmentId,search, page, limit)
+                employeeDao.getPagedEmployeesByDepartment(departmentId, search, page, limit)
                     .combine(employeeDao.countEmployeesByDepartment(departmentId)) { employeeEntities, count ->
                         Pair(employeeEntities, count)
                     }.collect { (managers, count) ->
                         emit(
                             Resource.Success(
                                 data = PaginatedData(
-                                    items = managers.map{ employeeEntity -> employeeEntity.toManagerAndEmployee() },
+                                    items = managers.map { employeeEntity -> employeeEntity.toManagerAndEmployee() },
                                     page = page,
                                     pageSize = limit,
                                     totalCount = count,
@@ -364,6 +468,7 @@ class SharedRepositoryImpl @Inject constructor(
 
         }.flowOn(Dispatchers.IO)
     }
+
     override suspend fun getManagerById(managerId: UUID): Resource<ManagerAndEmployee> {
         try {
             val cachedManager = managerDao.getManagerById(managerId)
@@ -409,7 +514,8 @@ class SharedRepositoryImpl @Inject constructor(
 
             try {
                 if (!forceFetchFromRemote) {
-                    val cachedTasksFlow = taskDao.getEmployeeTasks(employeeId, page, limit, search, sort)
+                    val cachedTasksFlow =
+                        taskDao.getEmployeeTasks(employeeId, page, limit, search, sort)
                     emitAll(cachedTasksFlow.map { cachedTasks ->
                         Timber.d("Cached Tasks: $cachedTasks")
                         createSuccessResponseForManagersAndEmployeesTasks(
@@ -418,7 +524,10 @@ class SharedRepositoryImpl @Inject constructor(
                             limit = limit,
                             totalCount = taskDao.getEmployeesTasksCount(employeeId, search),
                             message = "Loading from cache",
-                            hasNextPage = (page * limit) < taskDao.getEmployeesTasksCount(employeeId, search),
+                            hasNextPage = (page * limit) < taskDao.getEmployeesTasksCount(
+                                employeeId,
+                                search
+                            ),
                             hasPreviousPage = page > 1,
                             errors = null
                         )
@@ -433,7 +542,13 @@ class SharedRepositoryImpl @Inject constructor(
                     }
 
                     val tasksResponse =
-                        sharedApiService.getTasksAssignedToEmployee(employeeId, page, limit, search, sort)
+                        sharedApiService.getTasksAssignedToEmployee(
+                            employeeId,
+                            page,
+                            limit,
+                            search,
+                            sort
+                        )
 
                     if (tasksResponse.isSuccess && tasksResponse.data != null) {
                         val taskEntities = tasksResponse.data.items.map { task ->
@@ -487,7 +602,8 @@ class SharedRepositoryImpl @Inject constructor(
 
             try {
                 if (!forceFetchFromRemote) {
-                    val cachedEmployeesFlow = employeeDao.getPagedEmployees(page, limit, search, sort)
+                    val cachedEmployeesFlow =
+                        employeeDao.getPagedEmployees(page, limit, search, sort)
                     emitAll(cachedEmployeesFlow.map { cachedEmployees ->
                         Timber.d("Cached Employees: $cachedEmployees")
                         createSuccessResponseForManagersAndEmployees(
@@ -620,7 +736,7 @@ class SharedRepositoryImpl @Inject constructor(
         return Resource.Success(
             ResponseDto(
                 isSuccess = true,
-                statusCode = HttpStatusCodes.OK,
+                statusCode = OK,
                 message = message,
                 data = PaginatedData(
                     items = task,
@@ -648,7 +764,7 @@ class SharedRepositoryImpl @Inject constructor(
         return Resource.Success(
             ResponseDto(
                 isSuccess = true,
-                statusCode = HttpStatusCodes.OK,
+                statusCode = OK,
                 message = message,
                 data = PaginatedData(
                     items = managerAndEmployees,

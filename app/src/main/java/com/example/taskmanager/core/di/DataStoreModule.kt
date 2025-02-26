@@ -4,9 +4,12 @@ import android.content.Context
 import com.example.taskmanager.auth.data.local.TokenDataStore
 import com.example.taskmanager.core.data.local.datastore.LanguageDataStore
 import com.example.taskmanager.core.data.local.datastore.StatisticsDataStore
+import com.example.taskmanager.core.data.local.datastore.ThemeDataStore
 import com.example.taskmanager.core.data.local.datastore.UserInfoDataStore
 import com.example.taskmanager.core.data.local.repository.LanguageRepositoryImpl
 import com.example.taskmanager.core.domain.repository.LanguageRepository
+import com.example.taskmanager.core.ui.ThemeRepository
+import com.example.taskmanager.core.ui.ThemeRepositoryImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,6 +36,21 @@ object DataStoreModule {
         return LanguageRepositoryImpl(languageDataStore, context)
     }
 
+    @Provides
+    @Singleton
+    fun provideThemeDataStore(
+        @ApplicationContext context: Context
+    ): ThemeDataStore {
+        return ThemeDataStore(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideThemeRepository(
+        themeDataStore: ThemeDataStore
+    ): ThemeRepository {
+        return ThemeRepositoryImpl(themeDataStore)
+    }
     @Provides
     @Singleton
     fun provideTokenDataStore(@ApplicationContext context: Context): TokenDataStore {

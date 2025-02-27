@@ -15,10 +15,11 @@ import com.example.taskmanager.auth.presentation.state.LoginUiState
 import com.example.taskmanager.auth.utils.AuthResult
 import com.example.taskmanager.core.data.local.database.TaskManagerDatabase
 import com.example.taskmanager.core.data.local.datastore.StatisticsDataStore
-import com.example.taskmanager.core.utils.Screens
 import com.example.taskmanager.core.data.local.datastore.UserInfoDataStore
 import com.example.taskmanager.core.domain.model.User
+import com.example.taskmanager.core.domain.repository.SharedRepository
 import com.example.taskmanager.core.utils.Resource
+import com.example.taskmanager.core.utils.Screens
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -42,6 +44,7 @@ class LoginViewModel @Inject constructor(
     private val tokenDataStore: TokenDataStore,
     private val userInfoDataStore: UserInfoDataStore,
     private val taskManagerDatabase: TaskManagerDatabase,
+    private val sharedRepository: SharedRepository,
     private val statisticsDataStore: StatisticsDataStore
 ) : ViewModel() {
 
@@ -73,18 +76,30 @@ class LoginViewModel @Inject constructor(
                         if (admin is Resource.Success) {
                             Timber.i("${admin.data.firstName} has been added to datastore")
                             userInfoDataStore.saveUserInfo(admin.data.toUser())
-                        }else if (admin is Resource.Error){
+                        } else if (admin is Resource.Error) {
                             Timber.e("admin data didn't get saved")
                         }
 
                     }
 
                     "Manager" -> {
-                        //TODO
+                        _navigationEvent.emit(Screens.AppScreens.Dashboard.route)
+                        val manager = sharedRepository.getCurrentManager()
+                        if (manager is Resource.Success) {
+                            Timber.i("${manager.data.firstName} has been added to datastore")
+                            userInfoDataStore.saveUserInfo(manager.data)
+                        } else if (manager is Resource.Error) {
+                            Timber.e("manager data didn't get saved")
+                        }
                     }
 
                     "Employee" -> {
-                        //TODO
+                        _navigationEvent.emit(Screens.AppScreens.Dashboard.route)
+                        val employee = sharedRepository.getCurrentEmployee()
+                        if (employee is Resource.Success) {
+                            Timber.i("${employee.data.firstName} has been added to datastore")
+                            userInfoDataStore.saveUserInfo(employee.data)
+                        }
                     }
                 }
             } else {
@@ -179,7 +194,9 @@ class LoginViewModel @Inject constructor(
                 error = null
             )
 
-            when (val result = repository.resetPassword(resetPasswordRequest)) {
+            when (val result = withContext(Dispatchers.IO) {
+                repository.resetPassword(resetPasswordRequest)
+            }) {
                 is AuthResult.Authenticated -> {
                     _loginState.update {
                         it.copy(
@@ -231,7 +248,9 @@ class LoginViewModel @Inject constructor(
                     error = null
                 )
             }
-            when (val result = repository.forgetPassword(email)) {
+            when (val result = withContext(Dispatchers.IO) {
+                repository.forgetPassword(email)
+            }) {
                 is AuthResult.Authenticated -> {
                     _loginState.update {
                         it.copy(
@@ -284,8 +303,9 @@ class LoginViewModel @Inject constructor(
                     error = null
                 )
             }
-
-            when (val result = repository.loginUser(loginRequest)) {
+            when (val result = withContext(Dispatchers.IO) {
+                repository.loginUser(loginRequest)
+            }) {
                 is AuthResult.Authenticated -> {
                     _loginState.update {
                         it.copy(
@@ -298,8 +318,8 @@ class LoginViewModel @Inject constructor(
 
                     when (result.data?.data?.role) {
                         "Admin" -> _navigationEvent.emit(Screens.AppScreens.Dashboard.route)
-                        "Manager" -> { }//TODO
-                        "Employee" -> {}//TODO
+                        "Manager" -> _navigationEvent.emit(Screens.AppScreens.Dashboard.route)
+                        "Employee" -> _navigationEvent.emit(Screens.AppScreens.Dashboard.route)
                     }
                 }
 
@@ -356,7 +376,7 @@ class LoginViewModel @Inject constructor(
     }
 }
 
-fun Admin.toUser(): User{
+fun Admin.toUser(): User {
     return User(
         id = id,
         firstName = firstName,

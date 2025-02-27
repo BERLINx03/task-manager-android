@@ -17,6 +17,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navigation
 import com.example.taskmanager.auth.presentation.view.LoginScreen
 import com.example.taskmanager.auth.presentation.view.RoleSelectionScreen
 import com.example.taskmanager.auth.presentation.view.SignUpAdminScreen
@@ -57,18 +58,9 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class TaskManagerActivity : ComponentActivity() {
     private val loginViewModel: LoginViewModel by viewModels()
-    private val signUpEmployeeViewModel: SignUpEmployeeViewModel by viewModels()
-    private val signUpManagerViewModel: SignUpManagerViewModel by viewModels()
-    private val signUpAdminViewModel: SignUpAdminViewModel by viewModels()
-    private val dashboardViewModel: DashboardViewModel by viewModels()
-    private val departmentViewModel: DepartmentsViewModel by viewModels()
-    private val tasksViewModel: TasksViewModel by viewModels()
-    private val managersViewModel: ManagersViewModel by viewModels()
-    private val employeesViewModel: EmployeesViewModel by viewModels()
     private val languageViewModel: LanguageViewModel by viewModels()
     private val themeViewModel: ThemeViewModel by viewModels()
 
-    //    private val profileViewModel: ProfileViewModel by viewModels() you can't use same viewmodel for different screens of this
     override fun onCreate(savedInstanceState: Bundle?) {
 
         val splashScreen = installSplashScreen()
@@ -89,7 +81,7 @@ class TaskManagerActivity : ComponentActivity() {
             }
             TaskManagerTheme(darkTheme = isDarkMode) {
                 val navController = rememberNavController()
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(modifier = Modifier.fillMaxSize()) { _ ->
                     NavHost(
                         navController = navController,
                         startDestination = Screens.AuthScreens.Login.route,
@@ -119,67 +111,102 @@ class TaskManagerActivity : ComponentActivity() {
                             RoleSelectionScreen(navController = navController)
                         }
 
-                        animatedComposable(Screens.AuthScreens.SignUp.Employee.route) {
-                            SignUpEmployeeScreen(
-                                onSignUpClick = {
-                                    signUpEmployeeViewModel.onEvent(it)
-                                },
-                                navController = navController,
-                                viewModel = signUpEmployeeViewModel
-                            )
+                        navigation(
+                            route = "SignUpEmployeeFlow",
+                            startDestination = Screens.AuthScreens.SignUp.Employee.route
+                        ){
+                            animatedComposable(Screens.AuthScreens.SignUp.Employee.route) {
+                                val signUpEmployeeViewModel: SignUpEmployeeViewModel = hiltViewModel(
+                                    navController.getBackStackEntry("SignUpEmployeeFlow")
+                                )
+                                SignUpEmployeeScreen(
+                                    onSignUpClick = {
+                                        signUpEmployeeViewModel.onEvent(it)
+                                    },
+                                    navController = navController,
+                                    viewModel = signUpEmployeeViewModel
+                                )
+                            }
+
+                            animatedComposable(Screens.AuthScreens.VerifyOtp.Employee.route) {
+                                val signUpEmployeeViewModel: SignUpEmployeeViewModel = hiltViewModel(
+                                    navController.getBackStackEntry("SignUpEmployeeFlow")
+                                )
+                                OtpEmployeeVerificationScreen(
+                                    onVerifyClick = {
+                                        signUpEmployeeViewModel.onEvent(it)
+                                    },
+                                    navController = navController,
+                                    viewModel = signUpEmployeeViewModel
+                                )
+                            }
                         }
 
-                        animatedComposable(Screens.AuthScreens.VerifyOtp.Employee.route) {
-                            OtpEmployeeVerificationScreen(
-                                onVerifyClick = {
-                                    signUpEmployeeViewModel.onEvent(it)
-                                },
-                                navController = navController,
-                                viewModel = signUpEmployeeViewModel
-                            )
+
+                        navigation(
+                            route = "SignUpManagerFlow",
+                            startDestination = Screens.AuthScreens.SignUp.Manager.route
+                        ){
+                            animatedComposable(Screens.AuthScreens.SignUp.Manager.route) {
+                                val signUpManagerViewModel: SignUpManagerViewModel = hiltViewModel(
+                                    navController.getBackStackEntry("SignUpManagerFlow")
+                                )
+                                SignUpManagerScreen(
+                                    onSignUpClick = {
+                                        signUpManagerViewModel.onEvent(it)
+                                    },
+                                    navController = navController,
+                                    viewModel = signUpManagerViewModel
+                                )
+                            }
+
+                            animatedComposable(Screens.AuthScreens.VerifyOtp.Manager.route) {
+                                val signUpManagerViewModel: SignUpManagerViewModel = hiltViewModel(
+                                    navController.getBackStackEntry("SignUpManagerFlow")
+                                )
+                                OtpManagerVerificationScreen(
+                                    onVerifyClick = {
+                                        signUpManagerViewModel.onEvent(it)
+                                    },
+                                    navController = navController,
+                                    viewModel = signUpManagerViewModel
+                                )
+                            }
                         }
 
-                        animatedComposable(Screens.AuthScreens.SignUp.Manager.route) {
-                            SignUpManagerScreen(
-                                onSignUpClick = {
-                                    signUpManagerViewModel.onEvent(it)
-                                },
-                                navController = navController,
-                                viewModel = signUpManagerViewModel
-                            )
-                        }
+                        navigation(
+                            route = "SignUpAdminFlow",
+                            startDestination = Screens.AuthScreens.SignUp.Admin.route
+                        ){
+                            animatedComposable(Screens.AuthScreens.SignUp.Admin.route) {
+                                val signUpAdminViewModel: SignUpAdminViewModel = hiltViewModel(
+                                    navController.getBackStackEntry("SignUpAdminFlow")
+                                )
+                                SignUpAdminScreen(
+                                    onSignUpClick = {
+                                        signUpAdminViewModel.onEvent(it)
+                                    },
+                                    navController = navController,
+                                    viewModel = signUpAdminViewModel
+                                )
+                            }
 
-                        animatedComposable(Screens.AuthScreens.VerifyOtp.Manager.route) {
-                            OtpManagerVerificationScreen(
-                                onVerifyClick = {
-                                    signUpManagerViewModel.onEvent(it)
-                                },
-                                navController = navController,
-                                viewModel = signUpManagerViewModel
-                            )
-                        }
+                            animatedComposable(Screens.AuthScreens.VerifyOtp.Admin.route) {
+                                val signUpAdminViewModel: SignUpAdminViewModel = hiltViewModel(
+                                    navController.getBackStackEntry("SignUpAdminFlow")
+                                )
+                                OtpAdminVerificationScreen(
+                                    onVerifyClick = {
+                                        signUpAdminViewModel.onEvent(it)
+                                    },
+                                    navController = navController,
+                                    viewModel = signUpAdminViewModel
+                                )
+                            }
 
-                        animatedComposable(Screens.AuthScreens.SignUp.Admin.route) {
-                            SignUpAdminScreen(
-                                onSignUpClick = {
-                                    signUpAdminViewModel.onEvent(it)
-                                },
-                                navController = navController,
-                                viewModel = signUpAdminViewModel
-                            )
                         }
-
-                        animatedComposable(Screens.AuthScreens.VerifyOtp.Admin.route) {
-                            OtpAdminVerificationScreen(
-                                onVerifyClick = {
-                                    signUpAdminViewModel.onEvent(it)
-                                },
-                                navController = navController,
-                                viewModel = signUpAdminViewModel
-                            )
-                        }
-
                         animatedComposable(Screens.AppScreens.Dashboard.route) {
+                            val dashboardViewModel: DashboardViewModel = hiltViewModel()
                             DashboardScreen(
                                 viewModel = dashboardViewModel,
                                 loginViewModel = loginViewModel,
@@ -188,6 +215,7 @@ class TaskManagerActivity : ComponentActivity() {
                         }
 
                         animatedComposable(Screens.AppScreens.Departments.route) {
+                            val departmentViewModel: DepartmentsViewModel = hiltViewModel()
                             DepartmentsScreen(
                                 departmentsViewModel = departmentViewModel,
                                 loginViewModel = loginViewModel,
@@ -208,6 +236,7 @@ class TaskManagerActivity : ComponentActivity() {
                         }
 
                         animatedComposable(Screens.AppScreens.Tasks.route) {
+                            val tasksViewModel: TasksViewModel = hiltViewModel()
                             TasksScreen(
                                 loginViewModel = loginViewModel,
                                 navController = navController,
@@ -216,6 +245,8 @@ class TaskManagerActivity : ComponentActivity() {
                         }
 
                         animatedComposable(Screens.AppScreens.Managers.route) {
+                            val managersViewModel: ManagersViewModel = hiltViewModel()
+                            val departmentViewModel: DepartmentsViewModel = hiltViewModel()
                             ManagersScreen(
                                 loginViewModel = loginViewModel,
                                 navController = navController,
@@ -225,6 +256,8 @@ class TaskManagerActivity : ComponentActivity() {
                         }
 
                         animatedComposable(Screens.AppScreens.Employees.route) {
+                            val employeesViewModel: EmployeesViewModel = hiltViewModel()
+                            val departmentViewModel: DepartmentsViewModel = hiltViewModel()
                             EmployeesScreen(
                                 loginViewModel = loginViewModel,
                                 navController = navController,
@@ -250,7 +283,7 @@ class TaskManagerActivity : ComponentActivity() {
                             )
                         }
 
-                        animatedComposable(Screens.AppScreens.CurrentUserProfile.route,){
+                        animatedComposable(Screens.AppScreens.CurrentUserProfile.route){
                             val profileViewModel: ProfileViewModel = hiltViewModel()
                             val isCurrent = it.arguments?.getString("isCurrent")?.toBoolean() ?: false
                             ProfileScreen(

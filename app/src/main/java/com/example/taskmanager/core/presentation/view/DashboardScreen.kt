@@ -73,82 +73,80 @@ fun DashboardScreen(
     val isRefreshing = state.isRefreshing
     val pullRefreshState = rememberPullToRefreshState()
 
-    if (role != null) {
-        NavigationDrawer(
-            drawerState = drawerState,
-            user = user,
-            loginViewModel = loginViewModel,
-            homeSelected = true,
-            navController = navController,
+
+    NavigationDrawer(
+        drawerState = drawerState,
+        user = user,
+        loginViewModel = loginViewModel,
+        homeSelected = true,
+        navController = navController,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
         ) {
-            Column(
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = "Welcome",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = user?.let {
+                                "${it.firstName} ${it.lastName}"
+                            } ?: "Unknown User",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                drawerState.open()
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Default.Menu, "Open Menu")
+                    }
+                }
+            )
+            PullToRefreshBox(
+                state = pullRefreshState,
+                onRefresh = { viewModel.onIntent(DashboardIntents.Refresh) },
+                isRefreshing = isRefreshing,
+                indicator = {
+                    Indicator(
+                        modifier = Modifier.align(Alignment.TopCenter),
+                        isRefreshing = isRefreshing,
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        state = pullRefreshState
+                    )
+                },
                 modifier = Modifier
                     .fillMaxSize()
+                    .weight(1f)
             ) {
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(
-                                text = "Welcome",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                text = user?.let {
-                                    "${it.firstName} ${it.lastName}"
-                                } ?: "Unknown User",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(
-                            onClick = {
-                                scope.launch {
-                                    drawerState.open()
-                                }
-                            }
-                        ) {
-                            Icon(Icons.Default.Menu, "Open Menu")
-                        }
-                    }
-                )
-                // Main content
-                PullToRefreshBox(
-                    state = pullRefreshState,
-                    onRefresh = { viewModel.onIntent(DashboardIntents.Refresh) },
-                    isRefreshing = isRefreshing,
-                    indicator = {
-                        Indicator(
-                            modifier = Modifier.align(Alignment.TopCenter),
-                            isRefreshing = isRefreshing,
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            state = pullRefreshState
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .weight(1f)
-                ) {
-                    DashboardContent(
-                        state = state,
-                        navController = navController,
-                        recentTasks = listOf(
-                            TaskItem(
-                                title = "Update Employee Handbook",
-                                assignee = "John Doe",
-                                dueDate = "2024-02-25",
-                                status = "In Progress"
-                            ),
-                            TaskItem(
-                                title = "Quarterly Performance Review",
-                                assignee = "Jane Smith",
-                                dueDate = "2024-02-28",
-                                status = "Pending"
-                            ),
-                        )
+                DashboardContent(
+                    state = state,
+                    navController = navController,
+                    recentTasks = listOf(
+                        TaskItem(
+                            title = "Update Employee Handbook",
+                            assignee = "John Doe",
+                            dueDate = "2024-02-25",
+                            status = "In Progress"
+                        ),
+                        TaskItem(
+                            title = "Quarterly Performance Review",
+                            assignee = "Jane Smith",
+                            dueDate = "2024-02-28",
+                            status = "Pending"
+                        ),
                     )
-                }
+                )
             }
         }
     }
@@ -191,7 +189,7 @@ fun DashboardContent(
                         title = "Admins",
                         count = state.adminsCount,
                         backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                        navController = {  }
+                        navController = { }
                     )
                 }
 
@@ -273,8 +271,7 @@ fun StatisticCard(
             .height(120.dp)
             .clickable {
                 navController()
-            }
-        ,
+            },
         colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
         Column(

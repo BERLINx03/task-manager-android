@@ -15,4 +15,8 @@
     <string name="app_language">App Language</string>
     <string name="appearance">Appearance</string>
     <string name="dark_mode">Dark Mode</string>
+    <string name="add_new_task">Add New Task</string>
+    <string name="task_title">Task Title</string>
+    <string name="add_task">Add Task</string>
+    <string name="status">Status</string>
 </resources>

@@ -1,4 +1,4 @@
-package com.example.taskmanager.admin.data.remote.dto
+package com.example.taskmanager.manager.data.remote.dto
 
 import java.util.UUID
 

@@ -1,9 +1,13 @@
 package com.example.taskmanager.core.presentation.state
 
+import com.example.taskmanager.core.domain.model.ManagerAndEmployee
 import com.example.taskmanager.core.domain.model.Task
 import com.example.taskmanager.core.domain.model.User
 
 data class TasksState(
+    val sortOption: String = "title_asc",
+    val title: String = "",
+    val addSuccessfully: Boolean = false,
     val user: User? = null,
     val isRefreshing: Boolean = false,
     val tasks: List<Task> = emptyList(),

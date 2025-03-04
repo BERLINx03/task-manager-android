@@ -86,4 +86,7 @@ interface EmployeeDao {
     @Upsert
     suspend fun upsertEmployees(employeeEntities: List<EmployeeEntity>)
 
+    @Query("SELECT * FROM employees WHERE departmentId = :departmentId AND (firstName LIKE '%' || :search || '%' OR :search IS NULL) ORDER BY firstName ASC")
+    fun getAllEmployeesByDepartment(departmentId: UUID, search: String?): Flow<List<EmployeeEntity>>
+
 }

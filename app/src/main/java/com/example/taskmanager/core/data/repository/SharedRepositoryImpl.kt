@@ -465,7 +465,81 @@ class SharedRepositoryImpl @Inject constructor(
                         Timber.d("Pagination debug: page=$page, limit=$limit, count=$count, hasNext=${(page * limit) < count}, hasPrev=${page > 1}")
                     }
             }
+        }.flowOn(Dispatchers.IO)
+    }
 
+    override suspend fun getAllEmployeesInDepartment(
+        departmentId: UUID,
+        search: String?,
+        sort: String?,
+        forceFetchFromRemote: Boolean
+    ): Flow<Resource<List<ManagerAndEmployee>>> {
+        return flow {
+            emit(Resource.Loading(true))
+            if (hasNetwork) {
+                try {
+                    val countResponse = sharedApiService.getEmployeesInDepartment(
+                        departmentId,
+                        1,
+                        1,
+                        search,
+                        sort
+                    )
+
+                    if (!countResponse.isSuccess) {
+                        emit(Resource.Error("Failed to fetch data from server: ${countResponse.message}"))
+                        return@flow
+                    }
+
+                    val totalCount = countResponse.data?.totalCount ?: 0
+
+                    if (totalCount == 0) {
+                        emit(Resource.Success(emptyList()))
+                        return@flow
+                    }
+
+                    val response = sharedApiService.getEmployeesInDepartment(
+                        departmentId,
+                        1,
+                        totalCount,
+                        search,
+                        sort
+                    )
+
+                    if (!response.isSuccess) {
+                        when (response.statusCode){
+                            BAD_REQUEST, UNAUTHORIZED, FORBIDDEN, NOT_FOUND, HTTP_CONFLICT, 429 -> {
+                                emit(Resource.Error(getUserFriendlyMessage(response.statusCode)))
+                            }
+                        }
+                    } else if (response.data != null) {
+                        val employees = response.data.items.map { it.toManagerAndEmployee() }
+                        employeeDao.upsertEmployees(employees.map { it.toEmployeeEntity() })
+
+                        emit(Resource.Success(employees))
+                        Timber.d("Fetched all ${employees.size} employees for department $departmentId")
+                        return@flow
+                    }
+                } catch (e: IOException) {
+                    emit(Resource.Error(getIOExceptionMessage(e)))
+                } catch (e: HttpException) {
+                    emit(Resource.Error(getUserFriendlyMessage(e.code())))
+                } catch (e: Exception) {
+                    emit(Resource.Error("Something went wrong. Try again later"))
+                }
+            } else {
+                if (forceFetchFromRemote) {
+                    emit(Resource.Error("No internet connection. Try again later."))
+                    return@flow
+                }
+
+                employeeDao.getAllEmployeesByDepartment(departmentId, search).collect { employeeEntities ->
+                    val employees = employeeEntities.map { it.toManagerAndEmployee() }
+                    emit(Resource.Success(employees))
+                    emit(Resource.Loading(false))
+                    Timber.d("Fetched all ${employees.size} employees from local DB for department $departmentId")
+                }
+            }
         }.flowOn(Dispatchers.IO)
     }
 
@@ -693,12 +767,15 @@ class SharedRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getTaskById(taskId: UUID): Resource<Task> {
+    override suspend fun getTaskById(taskId: UUID, forceFetchFromRemote: Boolean): Resource<Task> {
         try {
-            val cachedTask = taskDao.getTaskById(taskId)
-            if (cachedTask != null) {
-                return Resource.Success(cachedTask.toTask())
-            } else if (!networkUtils.isNetworkAvailable()) {
+            if (!forceFetchFromRemote) {
+                val cachedTask = taskDao.getTaskById(taskId)
+                if (cachedTask != null) {
+                    return Resource.Success(cachedTask.toTask())
+                }
+            }
+            if (!networkUtils.isNetworkAvailable()) {
                 return Resource.Error("No internet connection. Try again later.")
             } else {
                 val taskResponse = sharedApiService.getTaskById(taskId)

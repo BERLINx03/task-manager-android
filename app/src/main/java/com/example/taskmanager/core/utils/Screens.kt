@@ -33,8 +33,14 @@ sealed class Screens(val route: String) {
         data object Employees : AppScreens("employees")
         data object Profile : AppScreens("profile/{role}/{userId}")
         data object CurrentUserProfile: AppScreens("my_profile?isCurrent={isCurrent}")
-        data object Tasks : AppScreens("tasks")
-        data object TaskDetails: AppScreens("tasks/{role}/{taskId}")
+        data object Tasks : AppScreens("tasks/{managerId}")
+        data object TaskDetails: AppScreens("task_details/{role}/{taskId}")
+        data object AddTask: AppScreens("TaskDetailsFlow/add_task")
+        data object EditTask: AppScreens("TaskDetailsFlow/edit_task/{operationType}"){
+            fun createRoute(operationType: String): String {
+                return "TaskDetailsFlow/edit_task/$operationType"
+            }
+        }
         data object Settings: AppScreens("settings")
     }
 }

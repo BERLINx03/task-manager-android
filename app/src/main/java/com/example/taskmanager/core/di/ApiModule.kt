@@ -2,6 +2,7 @@ package com.example.taskmanager.core.di
 
 import com.example.taskmanager.admin.data.remote.AdminServiceApi
 import com.example.taskmanager.core.data.remote.SharedApiService
+import com.example.taskmanager.manager.data.remote.ManagerApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,4 +25,11 @@ object ApiModule {
     fun provideSharedApiService(@SharedRetrofit retrofit: Retrofit): SharedApiService {
         return retrofit.create(SharedApiService::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideManagerApiService(@ManagerRetrofit retrofit: Retrofit): ManagerApiService {
+        return retrofit.create(ManagerApiService::class.java)
+    }
+
 }

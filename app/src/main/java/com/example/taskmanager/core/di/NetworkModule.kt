@@ -102,6 +102,18 @@ object NetworkModule {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
+
+
+@Provides
+    @Singleton
+    @ManagerRetrofit
+    fun provideManagerRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
 }
 
 @Qualifier
@@ -111,6 +123,10 @@ annotation class AuthRetrofit
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class SharedRetrofit
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class ManagerRetrofit
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)

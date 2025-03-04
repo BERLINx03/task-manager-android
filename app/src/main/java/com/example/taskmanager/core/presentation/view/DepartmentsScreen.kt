@@ -564,6 +564,7 @@ fun DepartmentsScreen(
                     }
                 }
             }
+
             if (showPermissionDialog.value) {
                 PermissionDialog(showPermissionDialog)
             }

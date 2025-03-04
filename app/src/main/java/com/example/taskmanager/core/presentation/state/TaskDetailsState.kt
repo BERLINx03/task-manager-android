@@ -1,9 +1,13 @@
 package com.example.taskmanager.core.presentation.state
 
+import com.example.taskmanager.core.domain.model.ManagerAndEmployee
 import com.example.taskmanager.core.domain.model.Task
+import com.example.taskmanager.core.domain.model.User
 import java.util.UUID
 
 data class TaskDetailsState(
+    val user: User? = null,
+    val employeesInDepartment: List<ManagerAndEmployee> = emptyList(),
     val task: Task? = Task(
         title = "",
         description = "",

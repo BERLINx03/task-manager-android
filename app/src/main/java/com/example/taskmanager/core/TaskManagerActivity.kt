@@ -53,6 +53,7 @@ import com.example.taskmanager.core.ui.ThemeViewModel
 import com.example.taskmanager.core.ui.theme.TaskManagerTheme
 import com.example.taskmanager.core.utils.Screens
 import com.example.taskmanager.core.utils.animatedComposable
+import com.example.taskmanager.manager.presentation.AddTaskScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -114,11 +115,12 @@ class TaskManagerActivity : ComponentActivity() {
                         navigation(
                             route = "SignUpEmployeeFlow",
                             startDestination = Screens.AuthScreens.SignUp.Employee.route
-                        ){
+                        ) {
                             animatedComposable(Screens.AuthScreens.SignUp.Employee.route) {
-                                val signUpEmployeeViewModel: SignUpEmployeeViewModel = hiltViewModel(
-                                    navController.getBackStackEntry("SignUpEmployeeFlow")
-                                )
+                                val signUpEmployeeViewModel: SignUpEmployeeViewModel =
+                                    hiltViewModel(
+                                        navController.getBackStackEntry("SignUpEmployeeFlow")
+                                    )
                                 SignUpEmployeeScreen(
                                     onSignUpClick = {
                                         signUpEmployeeViewModel.onEvent(it)
@@ -129,9 +131,10 @@ class TaskManagerActivity : ComponentActivity() {
                             }
 
                             animatedComposable(Screens.AuthScreens.VerifyOtp.Employee.route) {
-                                val signUpEmployeeViewModel: SignUpEmployeeViewModel = hiltViewModel(
-                                    navController.getBackStackEntry("SignUpEmployeeFlow")
-                                )
+                                val signUpEmployeeViewModel: SignUpEmployeeViewModel =
+                                    hiltViewModel(
+                                        navController.getBackStackEntry("SignUpEmployeeFlow")
+                                    )
                                 OtpEmployeeVerificationScreen(
                                     onVerifyClick = {
                                         signUpEmployeeViewModel.onEvent(it)
@@ -146,7 +149,7 @@ class TaskManagerActivity : ComponentActivity() {
                         navigation(
                             route = "SignUpManagerFlow",
                             startDestination = Screens.AuthScreens.SignUp.Manager.route
-                        ){
+                        ) {
                             animatedComposable(Screens.AuthScreens.SignUp.Manager.route) {
                                 val signUpManagerViewModel: SignUpManagerViewModel = hiltViewModel(
                                     navController.getBackStackEntry("SignUpManagerFlow")
@@ -177,7 +180,7 @@ class TaskManagerActivity : ComponentActivity() {
                         navigation(
                             route = "SignUpAdminFlow",
                             startDestination = Screens.AuthScreens.SignUp.Admin.route
-                        ){
+                        ) {
                             animatedComposable(Screens.AuthScreens.SignUp.Admin.route) {
                                 val signUpAdminViewModel: SignUpAdminViewModel = hiltViewModel(
                                     navController.getBackStackEntry("SignUpAdminFlow")
@@ -227,21 +230,82 @@ class TaskManagerActivity : ComponentActivity() {
                             route = Screens.AppScreens.DepartmentDetails.route,
                             arguments = listOf(
                                 navArgument("departmentId") { type = NavType.StringType },
-                            )) {
-                            val departmentDetailsViewModel = hiltViewModel<DepartmentDetailsViewModel>()
+                            )
+                        ) {
+                            val departmentDetailsViewModel =
+                                hiltViewModel<DepartmentDetailsViewModel>()
                             DepartmentDetailsScreen(
                                 navController = navController,
                                 departmentDetailsViewModel = departmentDetailsViewModel,
                             )
                         }
 
-                        animatedComposable(Screens.AppScreens.Tasks.route) {
+                        animatedComposable(
+                            route = Screens.AppScreens.Tasks.route,
+                            arguments = listOf(
+                                navArgument("managerId") { type = NavType.StringType }
+                            )
+                        ) {
                             val tasksViewModel: TasksViewModel = hiltViewModel()
                             TasksScreen(
                                 loginViewModel = loginViewModel,
                                 navController = navController,
                                 tasksViewModel = tasksViewModel
                             )
+                        }
+
+                        navigation(
+                            route = "TaskDetailsFlow",
+                            startDestination = Screens.AppScreens.TaskDetails.route
+                        ) {
+                            animatedComposable(Screens.AppScreens.AddTask.route) {
+                                val tasksViewModel: TasksViewModel = hiltViewModel()
+
+                                val taskDetailsViewModel: TaskDetailsViewModel = hiltViewModel(
+                                    navController.getBackStackEntry("TaskDetailsFlow")
+                                )
+                                AddTaskScreen(
+                                    taskDetailsViewModel = taskDetailsViewModel,
+                                    tasksViewModel = tasksViewModel
+                                ) { navController.navigateUp() }
+                            }
+
+
+                            animatedComposable(
+                                route = Screens.AppScreens.EditTask.route,
+                                arguments = listOf(
+                                    navArgument("operationType") { type = NavType.StringType }
+                                )
+                            ) {
+                                val operationType = it.arguments?.getString("operationType") ?: ""
+                                val tasksViewModel: TasksViewModel = hiltViewModel()
+
+                                val taskDetailsViewModel: TaskDetailsViewModel = hiltViewModel(
+                                    navController.getBackStackEntry("TaskDetailsFlow")
+                                )
+                                AddTaskScreen(
+                                    taskDetailsViewModel = taskDetailsViewModel,
+                                    tasksViewModel = tasksViewModel,
+                                    operationType = operationType
+                                ) { navController.navigateUp() }
+                            }
+
+
+                            animatedComposable(
+                                route = Screens.AppScreens.TaskDetails.route,
+                                arguments = listOf(
+                                    navArgument("taskId") { type = NavType.StringType },
+                                    navArgument("role") { type = NavType.StringType }
+                                )) {
+                                val taskDetailsViewModel: TaskDetailsViewModel = hiltViewModel(
+                                    navController.getBackStackEntry("TaskDetailsFlow")
+                                )
+
+                                TaskDetailsScreen(
+                                    taskDetailsViewModel = taskDetailsViewModel,
+                                    navController = navController
+                                )
+                            }
                         }
 
                         animatedComposable(Screens.AppScreens.Managers.route) {
@@ -283,9 +347,10 @@ class TaskManagerActivity : ComponentActivity() {
                             )
                         }
 
-                        animatedComposable(Screens.AppScreens.CurrentUserProfile.route){
+                        animatedComposable(Screens.AppScreens.CurrentUserProfile.route) {
                             val profileViewModel: ProfileViewModel = hiltViewModel()
-                            val isCurrent = it.arguments?.getString("isCurrent")?.toBoolean() ?: false
+                            val isCurrent =
+                                it.arguments?.getString("isCurrent")?.toBoolean() ?: false
                             ProfileScreen(
                                 profileViewModel = profileViewModel,
                                 navController = navController,
@@ -293,21 +358,7 @@ class TaskManagerActivity : ComponentActivity() {
                             )
                         }
 
-                        animatedComposable(
-                            route = Screens.AppScreens.TaskDetails.route,
-                            arguments = listOf(
-                                navArgument("taskId") { type = NavType.StringType },
-                                navArgument("role") { type = NavType.StringType }
-                            )) {
-                            val taskDetailsViewModel: TaskDetailsViewModel = hiltViewModel()
-
-                            TaskDetailsScreen(
-                                taskDetailsViewModel = taskDetailsViewModel,
-                                navController = navController
-                            )
-                        }
-
-                        animatedComposable(Screens.AppScreens.Settings.route){
+                        animatedComposable(Screens.AppScreens.Settings.route) {
                             SettingsScreen(
                                 languageViewModel = languageViewModel,
                                 themeViewModel = themeViewModel

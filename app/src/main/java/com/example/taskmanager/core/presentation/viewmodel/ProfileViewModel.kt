@@ -77,6 +77,7 @@ class ProfileViewModel @Inject constructor(
                     }
                 }
             }
+
             is ProfileIntents.LoadCurrentUser -> loadCurrentUser()
             is ProfileIntents.DeleteManager -> deleteManager(intent.managerId)
             is ProfileIntents.DeleteEmployee -> deleteEmployee(intent.employeeId)
@@ -99,7 +100,15 @@ class ProfileViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
-                adminRepository.updateAdmin(admin = UpdateAdminRequestDto(firstName,lastName,phoneNumber,gender,birthDate))
+                adminRepository.updateAdmin(
+                    admin = UpdateAdminRequestDto(
+                        firstName,
+                        lastName,
+                        phoneNumber,
+                        gender,
+                        birthDate
+                    )
+                )
             }
             when (result) {
                 is Resource.Error -> {
@@ -110,11 +119,13 @@ class ProfileViewModel @Inject constructor(
                         )
                     }
                 }
+
                 is Resource.Loading -> {
                     _state.update {
                         it.copy(isLoading = result.isLoading)
                     }
                 }
+
                 is Resource.Success -> {
                     _state.update {
                         it.copy(
@@ -244,7 +255,7 @@ class ProfileViewModel @Inject constructor(
                 else -> {
                     _state.update {
                         it.copy(
-                            errorMessage = "Unknown user type",isLoading = false
+                            errorMessage = "Unknown user type", isLoading = false
                         )
                     }
                 }
@@ -258,14 +269,16 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
             try {
-                sharedRepository.getTasksManagedByManager(
-                    managerId = UUID.fromString(userId),
-                    page = 1,
-                    limit = pageSize,
-                    search = null,
-                    sort = null,
-                    forceFetchFromRemote = forceFetchFromRemote,
-                ).collectLatest { resource ->
+                withContext(Dispatchers.IO) {
+                    sharedRepository.getTasksManagedByManager(
+                        managerId = UUID.fromString(userId),
+                        page = 1,
+                        limit = pageSize,
+                        search = null,
+                        sort = null,
+                        forceFetchFromRemote = forceFetchFromRemote,
+                    )
+                }.collectLatest { resource ->
                     when (resource) {
                         is Resource.Error -> {
                             _state.update {

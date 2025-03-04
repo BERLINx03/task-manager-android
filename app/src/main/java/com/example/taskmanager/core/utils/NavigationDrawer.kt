@@ -38,6 +38,7 @@ import androidx.navigation.NavController
 import com.example.taskmanager.auth.presentation.event.LoginUiEvent
 import com.example.taskmanager.auth.presentation.viewmodel.LoginViewModel
 import com.example.taskmanager.core.domain.model.User
+import timber.log.Timber
 
 /**
  * @author Abdallah Elsokkary
@@ -157,11 +158,16 @@ fun NavigationDrawer(
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
 
+                Timber.tag("NavigationDrawer").d("Current user id is ${user?.id ?: "Unknown"}")
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Task, "Tasks") },
                     label = { Text("Tasks") },
                     selected = tasksSelected,
-                    onClick = { navController.navigate(Screens.AppScreens.Tasks.route) },
+                    onClick = {
+                        navController.navigate(
+                        Screens.AppScreens.Tasks.route
+                            .replace("{managerId}",user?.id.toString())
+                    ) },
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
 

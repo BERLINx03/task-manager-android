@@ -307,6 +307,9 @@ class LoginViewModel @Inject constructor(
                 repository.loginUser(loginRequest)
             }) {
                 is AuthResult.Authenticated -> {
+                    val role = result.data?.data?.role ?: ""
+                    tokenDataStore.saveUserRole(role)
+                    tokenDataStore.saveAuthState(true)
                     _loginState.update {
                         it.copy(
                             isLoading = false,
@@ -316,10 +319,39 @@ class LoginViewModel @Inject constructor(
                         )
                     }
 
-                    when (result.data?.data?.role) {
-                        "Admin" -> _navigationEvent.emit(Screens.AppScreens.Dashboard.route)
-                        "Manager" -> _navigationEvent.emit(Screens.AppScreens.Dashboard.route)
-                        "Employee" -> _navigationEvent.emit(Screens.AppScreens.Dashboard.route)
+
+                    when (role) {
+                        "Admin" -> {
+                            _navigationEvent.emit(Screens.AppScreens.Dashboard.route)
+                            val admin = adminRepository.getCurrentAdmin()
+                            if (admin is Resource.Success) {
+                                Timber.i("${admin.data.firstName} has been added to datastore")
+                                userInfoDataStore.saveUserInfo(admin.data.toUser())
+                            } else if (admin is Resource.Error) {
+                                Timber.e("admin data didn't get saved")
+                            }
+
+                        }
+
+                        "Manager" -> {
+                            _navigationEvent.emit(Screens.AppScreens.Dashboard.route)
+                            val manager = sharedRepository.getCurrentManager()
+                            if (manager is Resource.Success) {
+                                Timber.i("${manager.data.firstName} has been added to datastore")
+                                userInfoDataStore.saveUserInfo(manager.data)
+                            } else if (manager is Resource.Error) {
+                                Timber.e("manager data didn't get saved")
+                            }
+                        }
+
+                        "Employee" -> {
+                            _navigationEvent.emit(Screens.AppScreens.Dashboard.route)
+                            val employee = sharedRepository.getCurrentEmployee()
+                            if (employee is Resource.Success) {
+                                Timber.i("${employee.data.firstName} has been added to datastore")
+                                userInfoDataStore.saveUserInfo(employee.data)
+                            }
+                        }
                     }
                 }
 

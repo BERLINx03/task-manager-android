@@ -10,8 +10,6 @@ sealed interface TasksIntents {
     data object LoadNextPage: TasksIntents
     data object LoadPreviousPage: TasksIntents
     data class LoadManagerTasks(val forceFetchFromRemote: Boolean = false): TasksIntents
-    data object LoadManagerNextPage: TasksIntents
-    data object LoadManagerPreviousPage: TasksIntents
     data class OnSearchQueryChange(val query: String): TasksIntents
     data class AddTask(
         val title: String,

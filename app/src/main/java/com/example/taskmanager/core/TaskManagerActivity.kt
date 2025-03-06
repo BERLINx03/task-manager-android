@@ -253,24 +253,26 @@ class TaskManagerActivity : ComponentActivity() {
                                 tasksViewModel = tasksViewModel
                             )
                         }
-
+                        animatedComposable(
+                            route = Screens.AppScreens.AddTask.route,
+                            arguments = listOf(
+                                navArgument("managerId") {
+                                    type = NavType.StringType
+                                    defaultValue = ""
+                                }
+                            )
+                        ) {
+                            val tasksViewModel: TasksViewModel = hiltViewModel()
+                            val taskDetailsViewModel: TaskDetailsViewModel = hiltViewModel()
+                            AddTaskScreen(
+                                taskDetailsViewModel = taskDetailsViewModel,
+                                tasksViewModel = tasksViewModel
+                            ) { navController.navigateUp() }
+                        }
                         navigation(
                             route = "TaskDetailsFlow",
                             startDestination = Screens.AppScreens.TaskDetails.route
                         ) {
-                            animatedComposable(Screens.AppScreens.AddTask.route) {
-                                val tasksViewModel: TasksViewModel = hiltViewModel()
-
-                                val taskDetailsViewModel: TaskDetailsViewModel = hiltViewModel(
-                                    navController.getBackStackEntry("TaskDetailsFlow")
-                                )
-                                AddTaskScreen(
-                                    taskDetailsViewModel = taskDetailsViewModel,
-                                    tasksViewModel = tasksViewModel
-                                ) { navController.navigateUp() }
-                            }
-
-
                             animatedComposable(
                                 route = Screens.AppScreens.EditTask.route,
                                 arguments = listOf(

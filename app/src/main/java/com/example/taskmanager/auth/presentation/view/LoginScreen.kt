@@ -118,7 +118,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Welcome Text
             Text(
                 text = stringResource(R.string.welcome_back),
                 style = MaterialTheme.typography.headlineMedium.copy(

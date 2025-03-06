@@ -112,7 +112,6 @@ class SignUpEmployeeViewModel @Inject constructor(
             is SignUpEmployeeUiEvent.OnPhoneNumberChange -> {
                 validationJob?.cancel()
                 validationJob = viewModelScope.launch {
-                    delay(500)
                     validatePhoneNumber(event.phoneNumber) { isValid, error ->  // CHANGED: Added phone validation
                         _signUpState.update {
                             it.copy(
@@ -130,7 +129,6 @@ class SignUpEmployeeViewModel @Inject constructor(
                 // added debounce for email validation
                 validationJob?.cancel()
                 validationJob = viewModelScope.launch {
-                    delay(500)
                     val isValid = isValidEmail(event.username)
                     _signUpState.update {
                         it.copy(
@@ -150,7 +148,6 @@ class SignUpEmployeeViewModel @Inject constructor(
                 // so that we don't annoy the user with multiple errors
                 validationJob?.cancel()
                 validationJob = viewModelScope.launch {
-                    delay(500)
                     validatePassword(event.password) { isValid, error ->
                         _signUpState.update {
                             it.copy(

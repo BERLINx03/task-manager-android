@@ -284,7 +284,16 @@ fun TasksScreen(
                         Column {
                             if (userRole == "Manager") {
                                 Card(
-                                    onClick = { navController.navigate(Screens.AppScreens.AddTask.route) },
+                                    onClick = {
+                                        val managerId =
+                                            tasksViewModel.tasksState.value.user?.id?.toString()
+                                                ?: ""
+                                        navController.navigate(
+                                            Screens.AppScreens.AddTask.createRoute(
+                                                managerId
+                                            )
+                                        )
+                                    },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = 16.dp, vertical = 12.dp),

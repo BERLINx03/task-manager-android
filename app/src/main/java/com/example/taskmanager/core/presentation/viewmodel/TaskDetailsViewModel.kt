@@ -7,6 +7,7 @@ import com.example.taskmanager.auth.data.local.TokenDataStore
 import com.example.taskmanager.core.data.local.datastore.UserInfoDataStore
 import com.example.taskmanager.core.domain.model.ManagerAndEmployee
 import com.example.taskmanager.core.domain.model.Task
+import com.example.taskmanager.core.domain.model.User
 import com.example.taskmanager.core.domain.repository.SharedRepository
 import com.example.taskmanager.core.presentation.intents.TaskDetailsIntents
 import com.example.taskmanager.core.presentation.state.TaskDetailsState
@@ -34,6 +35,7 @@ class TaskDetailsViewModel @Inject constructor(
     userRoleDataStore: TokenDataStore,
     userInfo: UserInfoDataStore
 ) : ViewModel() {
+    val managerId = savedStateHandle.get<String>("managerId") ?: ""
     val taskId = savedStateHandle.get<String>("taskId") ?: ""
     val userType = savedStateHandle.get<String>("role") ?: "" //for employees so they're the only one to change
     private val _state = MutableStateFlow(TaskDetailsState())
@@ -41,10 +43,10 @@ class TaskDetailsViewModel @Inject constructor(
 
     val role = userRoleDataStore.userRole
 
-    private var currentManagerId: UUID = UUID.randomUUID()
     private var currentDepartmentId: UUID = UUID.randomUUID()
 
     init {
+        Timber.d("Manager ID: $managerId")
         viewModelScope.launch {
             userInfo.userInfoFlow.collect { user ->
                 _state.update { it.copy(user = user) }
@@ -56,28 +58,62 @@ class TaskDetailsViewModel @Inject constructor(
 
     fun onIntent(intent: TaskDetailsIntents) {
         when (intent) {
-            is TaskDetailsIntents.DownloadTaskPdf -> TODO()
             is TaskDetailsIntents.LoadTaskDetails -> load()
-            is TaskDetailsIntents.ReassignTask -> TODO()
             is TaskDetailsIntents.Refresh -> load(true)
-            is TaskDetailsIntents.UpdateTask -> updateTask(UUID.fromString(taskId), intent.task)
-            is TaskDetailsIntents.DeleteTask -> deleteTask(UUID.fromString(taskId))
+            is TaskDetailsIntents.UpdateTask -> {
+                if (taskId.isBlank()) {
+                    _state.update { it.copy(errorMessage = "No task ID provided for update") }
+                    return
+                }
+                try {
+                    updateTask(UUID.fromString(taskId), intent.task)
+                } catch (e: IllegalArgumentException) {
+                    _state.update { it.copy(errorMessage = "Invalid task ID format: ${e.message}") }
+                }
+            }
+            is TaskDetailsIntents.DeleteTask -> {
+                if (taskId.isBlank()) {
+                    _state.update { it.copy(errorMessage = "No task ID provided for deletion") }
+                    return
+                }
+                try {
+                    deleteTask(UUID.fromString(taskId))
+                } catch (e: IllegalArgumentException) {
+                    _state.update { it.copy(errorMessage = "Invalid task ID format: ${e.message}") }
+                }
+            }
             is TaskDetailsIntents.LoadEmployeesInDepartment -> getAllEmployeeInDepartment(intent.forceFetchFromRemote)
         }
     }
+
     private suspend fun getCurrentManager(): Resource<ManagerAndEmployee> {
-        Timber.d("current manager ${_state.value.user?.id}")
-        val managerId = _state.value.user?.id ?: UUID.randomUUID()
+        val managerUUID = try {
+            UUID.fromString(managerId)
+        } catch (e: IllegalArgumentException) {
+            Timber.e("Invalid manager ID format: $managerId")
+            return Resource.Error("Invalid manager ID format")
+        }
+
         return withContext(Dispatchers.IO) {
-            val result = sharedRepository.getManagerById(managerId = managerId)
+            val result = sharedRepository.getManagerById(managerId = managerUUID)
             if (result is Resource.Success) {
-                currentManagerId = result.data.id
                 currentDepartmentId = result.data.departmentId
+                _state.update { it.copy(user = result.data.toUser()) }
             }
             result
         }
     }
 
+    private fun ManagerAndEmployee.toUser(): User {
+        return User(
+            id = this.id,
+            firstName = this.firstName,
+            lastName = this.lastName,
+            phoneNumber = this.phoneNumber,
+            gender = this.gender,
+            birthDate = birthDate
+        )
+    }
     private fun getAllEmployeeInDepartment(forceFetchFromRemote: Boolean) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
@@ -123,9 +159,16 @@ class TaskDetailsViewModel @Inject constructor(
             }
         }
     }
+
     private fun load(forceFetchFromRemote: Boolean = false) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
+            if (taskId.isBlank()) {
+                getAllEmployeeInDepartment(forceFetchFromRemote)
+                _state.update { it.copy(isLoading = false) }
+                return@launch
+            }
+
             when (val result = loadTaskFromIO(forceFetchFromRemote)) {
                 is Resource.Error -> {
                     _state.update {
@@ -158,7 +201,7 @@ class TaskDetailsViewModel @Inject constructor(
     private fun updateTask(taskId: UUID, task: CreateTaskRequestDto) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-            Timber.d("Task Details: $task and $taskId and $userType and $currentManagerId" +
+            Timber.d("Task Details: $task and $taskId and $userType and ${_state.value.user?.id ?: "not found mananger"}" +
                     "$currentDepartmentId")
             when (val result = updateTaskFromIO(taskId, task)) {
                 is Resource.Error -> {
@@ -211,7 +254,14 @@ class TaskDetailsViewModel @Inject constructor(
     }
 
     private suspend fun loadTaskFromIO(forceFetchFromRemote: Boolean): Resource<Task> = withContext(Dispatchers.IO) {
-        sharedRepository.getTaskById(UUID.fromString(taskId), forceFetchFromRemote)
+        if (taskId.isBlank()) {
+            return@withContext Resource.Error("No task ID provided")
+        }
+        try {
+            sharedRepository.getTaskById(UUID.fromString(taskId), forceFetchFromRemote)
+        } catch (e: IllegalArgumentException) {
+            Resource.Error("Invalid task ID format: ${e.message}")
+        }
     }
 
     private suspend fun updateTaskFromIO(taskId: UUID, task: CreateTaskRequestDto) = withContext(Dispatchers.IO) {

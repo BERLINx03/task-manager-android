@@ -35,7 +35,11 @@ sealed class Screens(val route: String) {
         data object CurrentUserProfile: AppScreens("my_profile?isCurrent={isCurrent}")
         data object Tasks : AppScreens("tasks/{managerId}")
         data object TaskDetails: AppScreens("task_details/{role}/{taskId}")
-        data object AddTask: AppScreens("TaskDetailsFlow/add_task")
+        data object AddTask: AppScreens("add_task/{managerId}") {
+            fun createRoute(managerId: String): String {
+                return "add_task/$managerId"
+            }
+        }
         data object EditTask: AppScreens("TaskDetailsFlow/edit_task/{operationType}"){
             fun createRoute(operationType: String): String {
                 return "TaskDetailsFlow/edit_task/$operationType"

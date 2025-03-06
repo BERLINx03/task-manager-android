@@ -7,6 +7,7 @@ import com.example.taskmanager.admin.domain.repository.AdminRepository
 import com.example.taskmanager.auth.data.local.TokenDataStore
 import com.example.taskmanager.core.data.local.datastore.UserInfoDataStore
 import com.example.taskmanager.core.domain.model.ManagerAndEmployee
+import com.example.taskmanager.core.domain.model.User
 import com.example.taskmanager.core.domain.repository.SharedRepository
 import com.example.taskmanager.core.presentation.intents.TasksIntents
 import com.example.taskmanager.core.presentation.state.TasksState
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -50,7 +52,6 @@ class TasksViewModel @Inject constructor(
     val userRole = userRoleDataStore.userRole
     private val pageSize = 10
 
-    private var currentManagerId: UUID = UUID.randomUUID()
     private var currentDepartmentId: UUID = UUID.randomUUID()
 
     init {
@@ -61,6 +62,7 @@ class TasksViewModel @Inject constructor(
                     it.copy(user = user)
                 }
             }
+            Timber.d("User Info: ${userInfoDataStore.userInfoFlow.first()}")
         }
     }
 
@@ -95,10 +97,8 @@ class TasksViewModel @Inject constructor(
                     }
                 }
             }
-            is TasksIntents.SetSortOption -> TODO()
-            is TasksIntents.LoadManagerNextPage -> TODO()
-            is TasksIntents.LoadManagerPreviousPage -> TODO()
             is TasksIntents.LoadManagerTasks -> loadManagerTasks(intent.forceFetchFromRemote)
+            is TasksIntents.SetSortOption -> TODO()
         }
     }
 
@@ -127,7 +127,7 @@ class TasksViewModel @Inject constructor(
                     1,
                     currentDepartmentId,
                     employeeId,
-                    currentManagerId
+                    UUID.fromString(managerId)
                 )
             }
             when (result) {
@@ -154,15 +154,29 @@ class TasksViewModel @Inject constructor(
             }
         }
     }
-
+    private fun ManagerAndEmployee.toUser(): User {
+        return User(
+            id = this.id,
+            firstName = this.firstName,
+            lastName = this.lastName,
+            phoneNumber = this.phoneNumber,
+            gender = this.gender,
+            birthDate = birthDate
+        )
+    }
     private suspend fun getCurrentManager(): Resource<ManagerAndEmployee> {
-        Timber.d("current manager $managerId")
-        val managerId = UUID.fromString(managerId)
+        val managerUUID = try {
+            UUID.fromString(managerId)
+        } catch (e: IllegalArgumentException) {
+            Timber.e("Invalid manager ID format: $managerId")
+            return Resource.Error("Invalid manager ID format")
+        }
+
         return withContext(Dispatchers.IO) {
-            val result = sharedRepository.getManagerById(managerId = managerId)
+            val result = sharedRepository.getManagerById(managerId = managerUUID)
             if (result is Resource.Success) {
-                currentManagerId = result.data.id
                 currentDepartmentId = result.data.departmentId
+                _state.update { it.copy(user = result.data.toUser()) }
             }
             result
         }

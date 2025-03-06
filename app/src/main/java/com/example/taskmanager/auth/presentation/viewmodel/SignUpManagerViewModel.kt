@@ -70,7 +70,7 @@ constructor(private val repository: AuthRepository) : ViewModel() {
             }
             is SignUpManagerUiEvent.OnFirstNameChange -> {
 
-                validateName(event.firstName) { isValid, error ->  // CHANGED: Added name validation
+                validateName(event.firstName) { isValid, error ->
                     _signUpState.update {
                         it.copy(
                             managerSignupRequest = it.managerSignupRequest.copy(
@@ -92,7 +92,7 @@ constructor(private val repository: AuthRepository) : ViewModel() {
             }
 
             is SignUpManagerUiEvent.OnLastNameChange -> {
-                validateName(event.lastName) { isValid, error ->  // CHANGED: Added name validation
+                validateName(event.lastName) { isValid, error ->
                     _signUpState.update {
                         it.copy(
                             managerSignupRequest = it.managerSignupRequest.copy(
@@ -115,7 +115,6 @@ constructor(private val repository: AuthRepository) : ViewModel() {
             is SignUpManagerUiEvent.OnPasswordChange -> {
                 validationJob?.cancel()
                 validationJob = viewModelScope.launch {
-                    delay(500)
                     validatePassword(event.password) { isValid, error ->
                         _signUpState.update {
                             it.copy(
@@ -131,8 +130,7 @@ constructor(private val repository: AuthRepository) : ViewModel() {
             is SignUpManagerUiEvent.OnPhoneNumberChange -> {
                 validationJob?.cancel()
                 validationJob = viewModelScope.launch {
-                    delay(500)
-                    validatePhoneNumber(event.phoneNumber) { isValid, error ->  // CHANGED: Added phone validation
+                    validatePhoneNumber(event.phoneNumber) { isValid, error ->
                         _signUpState.update {
                             it.copy(
                                 managerSignupRequest = it.managerSignupRequest.copy(
@@ -147,7 +145,6 @@ constructor(private val repository: AuthRepository) : ViewModel() {
             is SignUpManagerUiEvent.OnUsernameChange -> {
                 validationJob?.cancel()
                 validationJob = viewModelScope.launch {
-                    delay(500)
                     val isValid = isValidEmail(event.username)
                     _signUpState.update {
                         it.copy(
